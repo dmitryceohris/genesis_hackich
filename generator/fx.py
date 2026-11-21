@@ -6,7 +6,7 @@ from decimal import Decimal
 
 FOREIGN_CURRENCIES = ["USD", "EUR", "GBP", "KZT", "CHF"]
 
-# Условные базовые курсы: единиц базовой валюты за 1 единицу валюты
+# Units of base currency per one unit of quote currency.
 BASE_RATES = {
     "USD": Decimal("1.000000"),
     "EUR": Decimal("1.080000"),
@@ -26,6 +26,9 @@ def generate_fx(seed: int, manifest: dict) -> list[dict]:
     if start > end:
         raise ValueError("Invalid reporting period")
 
+    if base_currency not in BASE_RATES:
+        raise ValueError(f"Unsupported base currency: {base_currency}")
+
     currencies = [
         currency
         for currency in FOREIGN_CURRENCIES
@@ -35,29 +38,31 @@ def generate_fx(seed: int, manifest: dict) -> list[dict]:
     rates = []
     current = start
 
-    # Генерируем курсы на каждый календарный день
     while current <= end:
         for currency in currencies:
-            base_rate = BASE_RATES[currency] / BASE_RATES.get(
-                base_currency,
-                Decimal("1.000000"),
+            base_rate = (
+                BASE_RATES[currency] / BASE_RATES[base_currency]
             )
 
-            # Небольшое ежедневное изменение курса
             variation = Decimal(
                 rng.randint(-300, 300)
             ) / Decimal("10000")
 
-            rate = base_rate * (
-                Decimal("1") + variation
-            )
+            reference_rate = (
+                base_rate * (Decimal("1") + variation)
+            ).quantize(Decimal("0.000001"))
+
+            fx_id = f"FX-{current.isoformat()}-{currency}"
 
             rates.append({
+                "fx_id": fx_id,
                 "date": current.isoformat(),
                 "base_currency": base_currency,
                 "quote_currency": currency,
-                "rate": str(rate.quantize(Decimal("0.000001"))),
+                "rate": str(reference_rate),
+                "reference_rate": str(reference_rate),
                 "source": "SYNTHETIC_DAILY",
+                "reference_source": "INDEPENDENT_REFERENCE_FEED",
             })
 
         current += timedelta(days=1)

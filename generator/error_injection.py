@@ -231,6 +231,7 @@ def inject_errors(
                 generated_ids=[],
             )
 
+
     # -------------------------------------------------
     # 3. WRONG FX RATE
     # -------------------------------------------------
@@ -238,23 +239,22 @@ def inject_errors(
     if "fx_rate" in enabled_errors:
         eligible_fx = [
             record for record in result_fx
-            if record["quote_currency"]
-            != record["base_currency"]
+            if record["quote_currency"] != record["base_currency"]
         ]
 
         if eligible_fx:
             record = rng.choice(eligible_fx)
 
-            fx_id = generate_fx_id(record)
-
+            fx_id = record["fx_id"]
             original_rate = Decimal(record["rate"])
 
             incorrect_rate = (
                 original_rate * Decimal("1.10")
             ).quantize(Decimal("0.000001"))
 
+            # Change the recorded accounting rate.
+            # Keep the independent reference rate unchanged.
             record["rate"] = str(incorrect_rate)
-            record["fx_id"] = fx_id
 
             register_error(
                 error_type="fx_rate",
@@ -263,9 +263,9 @@ def inject_errors(
                 currency=record["quote_currency"],
                 evidence_ids=[fx_id],
                 explanation=(
-                    "The recorded exchange rate differs "
-                    "from the original synthetic rate "
-                    "generated for the same date and currency."
+                    "The recorded exchange rate differs from "
+                    "the independent reference rate for the "
+                    "same date and currency."
                 ),
                 operation="increase_fx_rate_by_10_percent",
                 source_ids=[fx_id],
