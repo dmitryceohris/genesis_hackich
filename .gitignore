@@ -7,3 +7,7 @@ venv/
 .idea/
 .vscode/
 
+
+# Generated episode data
+/episodes/
+/trajectories/
