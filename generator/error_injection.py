@@ -16,13 +16,6 @@ ERROR_TYPES = [
 ]
 
 
-def generate_fx_id(record: dict) -> str:
-    return (
-        f"FX-{record['date']}-"
-        f"{record['quote_currency']}"
-    )
-
-
 def inject_errors(
     seed: int,
     manifest: dict,
@@ -35,17 +28,11 @@ def inject_errors(
 
     config = config or {}
 
-    enabled_errors = config.get(
-        "error_types",
-        ERROR_TYPES,
-    )
+    enabled_errors = config.get("error_types", ERROR_TYPES)
 
     unknown_errors = set(enabled_errors) - set(ERROR_TYPES)
-
     if unknown_errors:
-        raise ValueError(
-            f"Unknown error types: {unknown_errors}"
-        )
+        raise ValueError(f"Unknown error types: {unknown_errors}")
 
     if not invoices:
         raise ValueError("Invoices cannot be empty")
@@ -56,7 +43,6 @@ def inject_errors(
         str(seed).encode()
     ).hexdigest()[:12].upper()
 
-    # Work on copies. Original clean data remains unchanged.
     result_ledger = copy.deepcopy(ledger)
     result_invoices = copy.deepcopy(invoices)
     result_payments = copy.deepcopy(payments)
@@ -64,6 +50,36 @@ def inject_errors(
 
     truth = []
     provenance = []
+
+    interaction_scenario = config.get("interaction_scenario")
+
+    valid_scenarios = {
+        None,
+        "duplicate_period",
+        "payment_period",
+    }
+
+    if interaction_scenario not in valid_scenarios:
+        raise ValueError(
+            f"Unknown interaction scenario: {interaction_scenario}"
+        )
+
+    if interaction_scenario == "duplicate_period":
+        required = {"duplicate_invoice", "accounting_period"}
+        if not required.issubset(set(enabled_errors)):
+            raise ValueError(
+                "duplicate_period requires duplicate_invoice and accounting_period"
+            )
+
+    if interaction_scenario == "payment_period":
+        required = {"payment_allocation", "accounting_period"}
+        if not required.issubset(set(enabled_errors)):
+            raise ValueError(
+                "payment_period requires payment_allocation and accounting_period"
+            )
+
+    duplicate_source_invoice_id = None
+    payment_allocation_invoice_id = None
 
     def register_error(
         error_type,
@@ -102,26 +118,20 @@ def inject_errors(
 
     if "duplicate_invoice" in enabled_errors:
         original = rng.choice(result_invoices)
-
         original_id = original["invoice_id"]
 
-        # Same document number, different internal ID.
+        duplicate_source_invoice_id = original_id
+
         if "document_number" not in original:
-            original["document_number"] = (
-                f"DOC-{original_id}"
-            )
+            original["document_number"] = f"DOC-{original_id}"
 
         duplicate = copy.deepcopy(original)
 
-        duplicate_id = (
-            f"INV-DUP-{token}-0001"
-        )
-
+        duplicate_id = f"INV-DUP-{token}-0001"
         duplicate["invoice_id"] = duplicate_id
 
         result_invoices.append(duplicate)
 
-        # Duplicate original invoice postings.
         original_entries = [
             row for row in result_ledger
             if row["invoice_id"] == original_id
@@ -134,9 +144,7 @@ def inject_errors(
             cloned = copy.deepcopy(original_entry)
 
             cloned["invoice_id"] = duplicate_id
-            cloned["transaction_id"] = (
-                f"DUP-POST-{duplicate_id}"
-            )
+            cloned["transaction_id"] = f"DUP-POST-{duplicate_id}"
             cloned["entry_id"] = (
                 f"{duplicate_id}-ENTRY-{index:03d}"
             )
@@ -186,10 +194,7 @@ def inject_errors(
                 for item in payment["allocations"]
             )
 
-            missing_amount = max(
-                1,
-                original_allocated // 4,
-            )
+            missing_amount = max(1, original_allocated // 4)
 
             allocation = payment["allocations"][0]
 
@@ -202,6 +207,8 @@ def inject_errors(
 
             payment_id = payment["payment_id"]
             invoice_id = allocation["invoice_id"]
+
+            payment_allocation_invoice_id = invoice_id
 
             related_entries = [
                 row for row in result_ledger
@@ -231,7 +238,6 @@ def inject_errors(
                 generated_ids=[],
             )
 
-
     # -------------------------------------------------
     # 3. WRONG FX RATE
     # -------------------------------------------------
@@ -252,8 +258,6 @@ def inject_errors(
                 original_rate * Decimal("1.10")
             ).quantize(Decimal("0.000001"))
 
-            # Change the recorded accounting rate.
-            # Keep the independent reference rate unchanged.
             record["rate"] = str(incorrect_rate)
 
             register_error(
@@ -287,7 +291,26 @@ def inject_errors(
             )
         ]
 
-        if eligible_invoices:
+        target_invoice_id = None
+
+        if interaction_scenario == "duplicate_period":
+            target_invoice_id = duplicate_source_invoice_id
+
+        elif interaction_scenario == "payment_period":
+            target_invoice_id = payment_allocation_invoice_id
+
+        if target_invoice_id is not None:
+            eligible_invoices = [
+                invoice for invoice in eligible_invoices
+                if invoice["invoice_id"] == target_invoice_id
+            ]
+
+        if not eligible_invoices:
+            if interaction_scenario is not None:
+                raise ValueError(
+                    f"Could not find target invoice for {interaction_scenario}"
+                )
+        else:
             invoice = rng.choice(eligible_invoices)
             invoice_id = invoice["invoice_id"]
 

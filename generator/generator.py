@@ -67,11 +67,14 @@ def generate_episode(
         payments=payments,
         fx=fx,
         config={
-            "error_types": config.get(
-                "error_types",
-                ERROR_TYPES,
-            )
-        },
+    "error_types": config.get(
+        "error_types",
+        ERROR_TYPES,
+    ),
+    "interaction_scenario": config.get(
+        "interaction_scenario"
+    ),
+},
     )
 
     final_ledger = injected["ledger"]
