@@ -325,3 +325,42 @@ class ModeValidationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DerivationCrossCheckTests(unittest.TestCase):
+    """Сверка двух независимых выводов об одной ошибке.
+
+    Эталон берёт суммы и затронутые записи из реконструкции, поэтому по этим
+    полям проверка валидатора нестрогая. Расхождение между тем, что записал
+    генератор при внесении, и тем, что восстановлено из публичных записей,
+    обязано быть видно в provenance, а не молча исчезать.
+    """
+
+    def setUp(self):
+        self.episode = build_episode(SEED)
+        self.disagreements = self.episode["provenance"]["derivation_disagreements"]
+
+    def test_disagreements_are_recorded_with_both_values(self):
+        for item in self.disagreements:
+            with self.subTest(error=item["error_id"], field=item["field"]):
+                self.assertIn("generator", item)
+                self.assertIn("reconstruction", item)
+                self.assertEqual(item["adopted"], "reconstruction")
+                self.assertNotEqual(item["generator"], item["reconstruction"])
+
+    def test_fx_and_allocation_are_cross_validated(self):
+        """По этим двум типам обе стороны считают одно и то же.
+
+        Значит их суммы и записи подтверждены независимо, а не только
+        собственным выводом валидатора.
+        """
+        agreed = {"fx_conversion", "payment_allocation"}
+        for item in self.disagreements:
+            with self.subTest(error=item["error_id"]):
+                self.assertNotIn(item["official_type"], agreed)
+
+    def test_every_disagreement_names_a_declared_issue(self):
+        declared = {issue["issue_id"] for issue in self.episode["truth"]["issues"]}
+        for item in self.disagreements:
+            with self.subTest(error=item["error_id"]):
+                self.assertIn(item["error_id"], declared)

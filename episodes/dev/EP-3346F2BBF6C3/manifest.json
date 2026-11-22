@@ -1,0 +1,32 @@
+{
+  "base_currency": "GBP",
+  "counts": {
+    "documents": 126,
+    "errors": 4,
+    "fx_rates": 1460,
+    "invoices": 51,
+    "ledger_entries": 292,
+    "payments": 75
+  },
+  "currency_exponents": {
+    "CHF": 2,
+    "EUR": 2,
+    "GBP": 2,
+    "JPY": 0,
+    "KZT": 2,
+    "USD": 2
+  },
+  "episode_id": "EP-3346F2BBF6C3",
+  "period_end": "2026-12-31",
+  "period_start": "2026-01-01",
+  "record_counts": {
+    "fx": 1460,
+    "invoices": 51,
+    "ledger": 292,
+    "payments": 75,
+    "policy": 5
+  },
+  "rounding": "HALF_UP",
+  "schema_version": "1.0",
+  "timezone": "Asia/Aqtobe"
+}

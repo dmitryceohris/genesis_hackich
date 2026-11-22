@@ -1,0 +1,109 @@
+{
+  "episode_id": "EP-5EF6FDF32513",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-INV-5EF6FDF32513-00042",
+          "DOC-INV-DUP-5EF6FDF32513-0001",
+          "INV-DUP-5EF6FDF32513-0001-ENTRY-000",
+          "POLICY-DUP"
+        ],
+        [
+          "DOC-INV-5EF6FDF32513-00042",
+          "INV-DUP-5EF6FDF32513-0001",
+          "INV-DUP-5EF6FDF32513-0001-ENTRY-000",
+          "POLICY-DUP"
+        ],
+        [
+          "DOC-INV-DUP-5EF6FDF32513-0001",
+          "INV-5EF6FDF32513-00042",
+          "INV-DUP-5EF6FDF32513-0001-ENTRY-000",
+          "POLICY-DUP"
+        ],
+        [
+          "INV-5EF6FDF32513-00042",
+          "INV-DUP-5EF6FDF32513-0001",
+          "INV-DUP-5EF6FDF32513-0001-ENTRY-000",
+          "POLICY-DUP"
+        ]
+      ],
+      "affected_ids": [
+        "INV-DUP-5EF6FDF32513-0001",
+        "INV-DUP-5EF6FDF32513-0001-ENTRY-000"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 135280,
+      "issue_id": "ERR-0001",
+      "type": "duplicate_invoice"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-PAY-PAY-5EF6FDF32513-00052",
+          "PAYMENT-POST-PAY-5EF6FDF32513-00052-0-000243",
+          "POLICY-ALLOC"
+        ],
+        [
+          "PAY-5EF6FDF32513-00052",
+          "PAYMENT-POST-PAY-5EF6FDF32513-00052-0-000243",
+          "POLICY-ALLOC"
+        ]
+      ],
+      "affected_ids": [
+        "INV-5EF6FDF32513-00040",
+        "PAY-5EF6FDF32513-00052"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 76124,
+      "issue_id": "ERR-0002",
+      "type": "payment_allocation"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-PAY-PAY-5EF6FDF32513-00000",
+          "FX-2026-01-15-GBP",
+          "PAYMENT-POST-PAY-5EF6FDF32513-00000-0-000138",
+          "POLICY-FX"
+        ],
+        [
+          "FX-2026-01-15-GBP",
+          "PAY-5EF6FDF32513-00000",
+          "PAYMENT-POST-PAY-5EF6FDF32513-00000-0-000138",
+          "POLICY-FX"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-5EF6FDF32513-00000",
+        "PAYMENT-POST-PAY-5EF6FDF32513-00000-0-000138"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 2234,
+      "issue_id": "ERR-0003",
+      "type": "fx_conversion"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-INV-5EF6FDF32513-00040",
+          "INV-POST-INV-5EF6FDF32513-00040-000108",
+          "POLICY-PERIOD"
+        ],
+        [
+          "INV-5EF6FDF32513-00040",
+          "INV-POST-INV-5EF6FDF32513-00040-000108",
+          "POLICY-PERIOD"
+        ]
+      ],
+      "affected_ids": [
+        "INV-5EF6FDF32513-00040",
+        "INV-POST-INV-5EF6FDF32513-00040-000108"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 438000,
+      "issue_id": "ERR-0004",
+      "type": "period_cutoff"
+    }
+  ]
+}

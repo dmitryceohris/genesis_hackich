@@ -1,0 +1,89 @@
+{
+  "derivation_disagreements": [
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0001",
+      "field": "amount_minor",
+      "generator": 3041875,
+      "official_type": "duplicate_invoice",
+      "reconstruction": 2765341
+    },
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0001",
+      "field": "affected_ids",
+      "generator": [
+        "INV-D4735E3A265E-00038",
+        "INV-DUP-D4735E3A265E-0001"
+      ],
+      "official_type": "duplicate_invoice",
+      "reconstruction": [
+        "INV-DUP-D4735E3A265E-0001",
+        "INV-DUP-D4735E3A265E-0001-ENTRY-000"
+      ]
+    },
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0004",
+      "field": "affected_ids",
+      "generator": [
+        "INV-D4735E3A265E-00022",
+        "INV-POST-INV-D4735E3A265E-00022-000062",
+        "INV-POST-INV-D4735E3A265E-00022-000063"
+      ],
+      "official_type": "period_cutoff",
+      "reconstruction": [
+        "INV-D4735E3A265E-00022",
+        "INV-POST-INV-D4735E3A265E-00022-000062"
+      ]
+    }
+  ],
+  "episode_id": "EP-D4735E3A265E",
+  "records": [
+    {
+      "error_id": "ERR-0001",
+      "generated_ids": [
+        "INV-DUP-D4735E3A265E-0001",
+        "INV-DUP-D4735E3A265E-0001-ENTRY-000",
+        "INV-DUP-D4735E3A265E-0001-ENTRY-001",
+        "INV-DUP-D4735E3A265E-0001-ENTRY-002"
+      ],
+      "operation": "duplicate_invoice_and_postings",
+      "source_ids": [
+        "INV-D4735E3A265E-00038"
+      ],
+      "type": "duplicate_invoice"
+    },
+    {
+      "error_id": "ERR-0002",
+      "generated_ids": [],
+      "operation": "reduce_payment_allocation",
+      "source_ids": [
+        "PAY-D4735E3A265E-00028",
+        "INV-D4735E3A265E-00018"
+      ],
+      "type": "payment_allocation"
+    },
+    {
+      "error_id": "ERR-0003",
+      "generated_ids": [],
+      "operation": "post_cash_row_with_rate_of_another_date",
+      "source_ids": [
+        "PAYMENT-POST-PAY-D4735E3A265E-00045-0-000230",
+        "FX-2026-12-27-GBP"
+      ],
+      "type": "fx_rate"
+    },
+    {
+      "error_id": "ERR-0004",
+      "generated_ids": [],
+      "operation": "move_postings_after_period_end",
+      "source_ids": [
+        "INV-D4735E3A265E-00022"
+      ],
+      "type": "accounting_period"
+    }
+  ],
+  "undeclarable": [],
+  "undeclarable_provenance": []
+}

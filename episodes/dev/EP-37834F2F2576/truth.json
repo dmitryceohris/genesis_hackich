@@ -1,0 +1,87 @@
+{
+  "episode_id": "EP-37834F2F2576",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-INV-37834F2F2576-00020",
+          "DOC-INV-DUP-37834F2F2576-0001",
+          "INV-DUP-37834F2F2576-0001-ENTRY-000",
+          "POLICY-DUP"
+        ],
+        [
+          "DOC-INV-37834F2F2576-00020",
+          "INV-DUP-37834F2F2576-0001",
+          "INV-DUP-37834F2F2576-0001-ENTRY-000",
+          "POLICY-DUP"
+        ],
+        [
+          "DOC-INV-DUP-37834F2F2576-0001",
+          "INV-37834F2F2576-00020",
+          "INV-DUP-37834F2F2576-0001-ENTRY-000",
+          "POLICY-DUP"
+        ],
+        [
+          "INV-37834F2F2576-00020",
+          "INV-DUP-37834F2F2576-0001",
+          "INV-DUP-37834F2F2576-0001-ENTRY-000",
+          "POLICY-DUP"
+        ]
+      ],
+      "affected_ids": [
+        "INV-DUP-37834F2F2576-0001",
+        "INV-DUP-37834F2F2576-0001-ENTRY-000"
+      ],
+      "currency": "KZT",
+      "expected_amount_minor": 204892,
+      "issue_id": "ERR-0001",
+      "type": "duplicate_invoice"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-PAY-PAY-37834F2F2576-00055",
+          "PAYMENT-POST-PAY-37834F2F2576-00055-0-000266",
+          "POLICY-ALLOC"
+        ],
+        [
+          "PAY-37834F2F2576-00055",
+          "PAYMENT-POST-PAY-37834F2F2576-00055-0-000266",
+          "POLICY-ALLOC"
+        ]
+      ],
+      "affected_ids": [
+        "INV-37834F2F2576-00047",
+        "PAY-37834F2F2576-00055"
+      ],
+      "currency": "KZT",
+      "expected_amount_minor": 201207,
+      "issue_id": "ERR-0002",
+      "type": "payment_allocation"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "DOC-PAY-PAY-37834F2F2576-00046",
+          "FX-2026-06-24-USD",
+          "PAYMENT-POST-PAY-37834F2F2576-00046-0-000245",
+          "POLICY-FX"
+        ],
+        [
+          "FX-2026-06-24-USD",
+          "PAY-37834F2F2576-00046",
+          "PAYMENT-POST-PAY-37834F2F2576-00046-0-000245",
+          "POLICY-FX"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-37834F2F2576-00046",
+        "PAYMENT-POST-PAY-37834F2F2576-00046-0-000245"
+      ],
+      "currency": "KZT",
+      "expected_amount_minor": 52268,
+      "issue_id": "ERR-0003",
+      "type": "fx_conversion"
+    }
+  ]
+}

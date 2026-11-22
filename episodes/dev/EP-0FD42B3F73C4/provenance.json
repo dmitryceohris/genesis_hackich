@@ -1,0 +1,80 @@
+{
+  "derivation_disagreements": [
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0001",
+      "field": "affected_ids",
+      "generator": [
+        "INV-0FD42B3F73C4-00002",
+        "INV-DUP-0FD42B3F73C4-0001"
+      ],
+      "official_type": "duplicate_invoice",
+      "reconstruction": [
+        "INV-DUP-0FD42B3F73C4-0001",
+        "INV-DUP-0FD42B3F73C4-0001-ENTRY-000"
+      ]
+    },
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0004",
+      "field": "affected_ids",
+      "generator": [
+        "INV-0FD42B3F73C4-00002",
+        "INV-POST-INV-0FD42B3F73C4-00002-000005",
+        "INV-POST-INV-0FD42B3F73C4-00002-000006"
+      ],
+      "official_type": "period_cutoff",
+      "reconstruction": [
+        "INV-0FD42B3F73C4-00002",
+        "INV-POST-INV-0FD42B3F73C4-00002-000005"
+      ]
+    }
+  ],
+  "episode_id": "EP-0FD42B3F73C4",
+  "records": [
+    {
+      "error_id": "ERR-0001",
+      "generated_ids": [
+        "INV-DUP-0FD42B3F73C4-0001",
+        "INV-DUP-0FD42B3F73C4-0001-ENTRY-000",
+        "INV-DUP-0FD42B3F73C4-0001-ENTRY-001"
+      ],
+      "operation": "duplicate_invoice_and_postings",
+      "source_ids": [
+        "INV-0FD42B3F73C4-00002"
+      ],
+      "type": "duplicate_invoice"
+    },
+    {
+      "error_id": "ERR-0002",
+      "generated_ids": [],
+      "operation": "reduce_payment_allocation",
+      "source_ids": [
+        "PAY-0FD42B3F73C4-00037",
+        "INV-0FD42B3F73C4-00029"
+      ],
+      "type": "payment_allocation"
+    },
+    {
+      "error_id": "ERR-0003",
+      "generated_ids": [],
+      "operation": "post_cash_row_with_rate_of_another_date",
+      "source_ids": [
+        "PAYMENT-POST-PAY-0FD42B3F73C4-00029-0-000197",
+        "FX-2026-04-14-GBP"
+      ],
+      "type": "fx_rate"
+    },
+    {
+      "error_id": "ERR-0004",
+      "generated_ids": [],
+      "operation": "move_postings_after_period_end",
+      "source_ids": [
+        "INV-0FD42B3F73C4-00002"
+      ],
+      "type": "accounting_period"
+    }
+  ],
+  "undeclarable": [],
+  "undeclarable_provenance": []
+}

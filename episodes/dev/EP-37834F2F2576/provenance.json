@@ -1,0 +1,79 @@
+{
+  "derivation_disagreements": [
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0001",
+      "field": "affected_ids",
+      "generator": [
+        "INV-37834F2F2576-00020",
+        "INV-DUP-37834F2F2576-0001"
+      ],
+      "official_type": "duplicate_invoice",
+      "reconstruction": [
+        "INV-DUP-37834F2F2576-0001",
+        "INV-DUP-37834F2F2576-0001-ENTRY-000"
+      ]
+    }
+  ],
+  "episode_id": "EP-37834F2F2576",
+  "records": [
+    {
+      "error_id": "ERR-0001",
+      "generated_ids": [
+        "INV-DUP-37834F2F2576-0001",
+        "INV-DUP-37834F2F2576-0001-ENTRY-000",
+        "INV-DUP-37834F2F2576-0001-ENTRY-001"
+      ],
+      "operation": "duplicate_invoice_and_postings",
+      "source_ids": [
+        "INV-37834F2F2576-00020"
+      ],
+      "type": "duplicate_invoice"
+    },
+    {
+      "error_id": "ERR-0002",
+      "generated_ids": [],
+      "operation": "reduce_payment_allocation",
+      "source_ids": [
+        "PAY-37834F2F2576-00055",
+        "INV-37834F2F2576-00047"
+      ],
+      "type": "payment_allocation"
+    },
+    {
+      "error_id": "ERR-0003",
+      "generated_ids": [],
+      "operation": "post_cash_row_with_rate_of_another_date",
+      "source_ids": [
+        "PAYMENT-POST-PAY-37834F2F2576-00046-0-000245",
+        "FX-2026-06-24-USD"
+      ],
+      "type": "fx_rate"
+    }
+  ],
+  "undeclarable": [
+    {
+      "affected_ids": [
+        "INV-37834F2F2576-00024",
+        "INV-POST-INV-37834F2F2576-00024-000068",
+        "INV-POST-INV-37834F2F2576-00024-000069",
+        "INV-POST-INV-37834F2F2576-00024-000070"
+      ],
+      "error_id": "ERR-0004",
+      "generator_type": "accounting_period",
+      "official_type": "period_cutoff",
+      "reason": "independent_reconstruction_found_no_discrepancy"
+    }
+  ],
+  "undeclarable_provenance": [
+    {
+      "error_id": "ERR-0004",
+      "generated_ids": [],
+      "operation": "move_postings_after_period_end",
+      "source_ids": [
+        "INV-37834F2F2576-00024"
+      ],
+      "type": "accounting_period"
+    }
+  ]
+}

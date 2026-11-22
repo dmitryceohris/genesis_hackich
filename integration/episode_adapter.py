@@ -184,6 +184,7 @@ def adapt_episode(episode):
     remaining = list(discrepancies)
     issues = []
     undeclarable = []
+    disagreements = []
 
     for item in private["truth"]:
         expected_kind = type_map[item["type"]]
@@ -232,15 +233,40 @@ def adapt_episode(episode):
             )
         ]
 
+        reconstructed_amount = sum(d.amount_minor for d in matched)
+        reconstructed_ids = set().union(*(d.keys for d in matched))
+
+        # Сверка двух независимых выводов об одной и той же ошибке: что
+        # записал генератор при внесении и что восстановила реконструкция из
+        # публичных записей. Эталон берёт второе, поэтому по этим полям
+        # проверка валидатора нестрогая, и расхождение нужно видеть, а не
+        # прятать. Молчаливое согласие ничего не доказывает; расхождение —
+        # доказывает, что одна из сторон считает не то.
+        generator_amount = item.get("claimed_amount_minor")
+        if generator_amount is not None and generator_amount != reconstructed_amount:
+            disagreements.append({
+                "error_id": item["error_id"],
+                "official_type": expected_kind,
+                "field": "amount_minor",
+                "generator": generator_amount,
+                "reconstruction": reconstructed_amount,
+                "adopted": "reconstruction",
+            })
+        if expected_ids and expected_ids != reconstructed_ids:
+            disagreements.append({
+                "error_id": item["error_id"],
+                "official_type": expected_kind,
+                "field": "affected_ids",
+                "generator": sorted(expected_ids),
+                "reconstruction": sorted(reconstructed_ids),
+                "adopted": "reconstruction",
+            })
+
         issues.append({
             "issue_id": item["error_id"],
             "type": expected_kind,
-            "affected_ids": sorted(
-                set().union(*(d.keys for d in matched))
-            ),
-            "expected_amount_minor": sum(
-                d.amount_minor for d in matched
-            ),
+            "affected_ids": sorted(reconstructed_ids),
+            "expected_amount_minor": reconstructed_amount,
             "currency": matched[0].currency,
             "acceptable_evidence_sets": evidence_sets,
         })
@@ -278,5 +304,6 @@ def adapt_episode(episode):
             "records": provenance,
             "undeclarable": undeclarable,
             "undeclarable_provenance": dropped_provenance,
+            "derivation_disagreements": disagreements,
         },
     }

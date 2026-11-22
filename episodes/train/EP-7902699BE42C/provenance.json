@@ -1,0 +1,98 @@
+{
+  "derivation_disagreements": [
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0001",
+      "field": "amount_minor",
+      "generator": 2391885,
+      "official_type": "duplicate_invoice",
+      "reconstruction": 2135612
+    },
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0001",
+      "field": "affected_ids",
+      "generator": [
+        "INV-7902699BE42C-00003",
+        "INV-DUP-7902699BE42C-0001"
+      ],
+      "official_type": "duplicate_invoice",
+      "reconstruction": [
+        "INV-DUP-7902699BE42C-0001",
+        "INV-DUP-7902699BE42C-0001-ENTRY-000"
+      ]
+    },
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0004",
+      "field": "amount_minor",
+      "generator": 115328,
+      "official_type": "period_cutoff",
+      "reconstruction": 104844
+    },
+    {
+      "adopted": "reconstruction",
+      "error_id": "ERR-0004",
+      "field": "affected_ids",
+      "generator": [
+        "INV-7902699BE42C-00012",
+        "INV-POST-INV-7902699BE42C-00012-000032",
+        "INV-POST-INV-7902699BE42C-00012-000033",
+        "INV-POST-INV-7902699BE42C-00012-000034"
+      ],
+      "official_type": "period_cutoff",
+      "reconstruction": [
+        "INV-7902699BE42C-00012",
+        "INV-POST-INV-7902699BE42C-00012-000032"
+      ]
+    }
+  ],
+  "episode_id": "EP-7902699BE42C",
+  "records": [
+    {
+      "error_id": "ERR-0001",
+      "generated_ids": [
+        "INV-DUP-7902699BE42C-0001",
+        "INV-DUP-7902699BE42C-0001-ENTRY-000",
+        "INV-DUP-7902699BE42C-0001-ENTRY-001",
+        "INV-DUP-7902699BE42C-0001-ENTRY-002"
+      ],
+      "operation": "duplicate_invoice_and_postings",
+      "source_ids": [
+        "INV-7902699BE42C-00003"
+      ],
+      "type": "duplicate_invoice"
+    },
+    {
+      "error_id": "ERR-0002",
+      "generated_ids": [],
+      "operation": "reduce_payment_allocation",
+      "source_ids": [
+        "PAY-7902699BE42C-00051",
+        "INV-7902699BE42C-00039"
+      ],
+      "type": "payment_allocation"
+    },
+    {
+      "error_id": "ERR-0003",
+      "generated_ids": [],
+      "operation": "post_cash_row_with_rate_of_another_date",
+      "source_ids": [
+        "PAYMENT-POST-PAY-7902699BE42C-00022-0-000177",
+        "FX-2026-11-19-KZT"
+      ],
+      "type": "fx_rate"
+    },
+    {
+      "error_id": "ERR-0004",
+      "generated_ids": [],
+      "operation": "move_postings_after_period_end",
+      "source_ids": [
+        "INV-7902699BE42C-00012"
+      ],
+      "type": "accounting_period"
+    }
+  ],
+  "undeclarable": [],
+  "undeclarable_provenance": []
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "accounting_basis": "accrual",
+    "policy_id": "POLICY-BASE",
+    "rule_ids": {
+      "allocation": "POLICY-ALLOC",
+      "duplicate": "POLICY-DUP",
+      "fx": "POLICY-FX",
+      "period": "POLICY-PERIOD"
+    }
+  },
+  {
+    "policy_id": "POLICY-FX",
+    "policy_version": "1.0",
+    "rule": "fx"
+  },
+  {
+    "policy_id": "POLICY-PERIOD",
+    "policy_version": "1.0",
+    "rule": "period"
+  },
+  {
+    "policy_id": "POLICY-ALLOC",
+    "policy_version": "1.0",
+    "rule": "allocation"
+  },
+  {
+    "policy_id": "POLICY-DUP",
+    "policy_version": "1.0",
+    "rule": "duplicate"
+  }
+]
