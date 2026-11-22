@@ -1,0 +1,335 @@
+﻿"""Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ СЂР°СЃС…РѕР¶РґРµРЅРёР№ С‚РѕР»СЊРєРѕ РёР· РїСѓР±Р»РёС‡РЅРѕРіРѕ СЃРЅРёРјРєР°.
+
+Р¤СѓРЅРєС†РёРё Р·РґРµСЃСЊ РїРѕР»СѓС‡Р°СЋС‚ ``Snapshot`` Рё РЅРёС‡РµРіРѕ Р±РѕР»СЊС€Рµ: ``truth`` СЃСЋРґР° С„РёР·РёС‡РµСЃРєРё
+РЅРµ РїРѕРїР°РґР°РµС‚. РЎСЂР°РІРЅРµРЅРёРµ СЃ СЌС‚Р°Р»РѕРЅРѕРј РґРµР»Р°РµС‚ РґРѕРІРµСЂРµРЅРЅР°СЏ РѕР±РІСЏР·РєР° РІ ``verify.py``.
+
+РЈСЃС‚СЂРѕР№СЃС‚РІРѕ РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РѕС‚ РїРѕР»РёС‚РёРєРё СЃРІРµСЂРєРё РЅР°РјРµСЂРµРЅРЅРѕ. РџРѕР»РёС‚РёРєР° РѕС‚РІРµС‡Р°РµС‚ РЅР° РІРѕРїСЂРѕСЃ
+В«С‡С‚Рѕ СЏ СѓСЃРїРµСЋ РЅР°Р№С‚Рё Р·Р° 100 С€Р°РіРѕРІВ». Р’Р°Р»РёРґР°С‚РѕСЂ РѕС‚РІРµС‡Р°РµС‚ РЅР° РґСЂСѓРіРѕР№: В«РєР°РєРёРµ
+РЅР°СЂСѓС€РµРЅРёСЏ С‚РѕР¶РґРµСЃС‚РІ РІРѕРѕР±С‰Рµ РµСЃС‚СЊ РІ СЌС‚РёС… РґР°РЅРЅС‹С…В» вЂ” Рё РїРµСЂРµС‡РёСЃР»СЏРµС‚ РёС… РІСЃРµ, РІРєР»СЋС‡Р°СЏ
+С‚Рµ, РєРѕС‚РѕСЂС‹С… РІ СЌС‚Р°Р»РѕРЅРµ РЅРµС‚. РќРµРѕР±СЉСЏРІР»РµРЅРЅРѕРµ СЂР°СЃС…РѕР¶РґРµРЅРёРµ РѕР·РЅР°С‡Р°РµС‚, С‡С‚Рѕ РґР°РЅРЅС‹Рµ
+РїСЂРѕС‚РёРІРѕСЂРµС‡РёРІС‹, Р° РїРѕ РєСЂРёС‚РµСЂРёСЏРј СЌС‚Рѕ РЅРµ СЃР»РѕР¶РЅРѕСЃС‚СЊ, Р° РїРѕС‚РµСЂСЏ Р±Р°Р»Р»РѕРІ.
+
+Р”Р»СЏ РєР°Р¶РґРѕРіРѕ СЂР°СЃС…РѕР¶РґРµРЅРёСЏ СЃРѕР±РёСЂР°СЋС‚СЃСЏ РІР°СЂРёР°РЅС‚С‹ РґРѕСЃС‚Р°С‚РѕС‡РЅРѕРіРѕ РЅР°Р±РѕСЂР° РґРѕРєР°Р·Р°С‚РµР»СЊСЃС‚РІ:
+РѕРґРёРЅ Рё С‚РѕС‚ Р¶Рµ С„Р°РєС‚ РјРѕР¶РЅРѕ РІР·СЏС‚СЊ Рё РёР· РґРѕРєСѓРјРµРЅС‚Р°, Рё РёР· Р·Р°РїРёСЃРё, РїРѕСЌС‚РѕРјСѓ РІР°СЂРёР°РЅС‚РѕРІ
+РЅРµСЃРєРѕР»СЊРєРѕ, Рё СЌС‚Р°Р»РѕРЅСѓ РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЃРѕРІРїР°СЃС‚СЊ СЃ Р»СЋР±С‹Рј.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+from itertools import product
+
+from .arithmetic import company_timezone, convert_minor, in_period, local_date, row_amount_minor
+from .snapshot import Snapshot
+
+DEFAULT_RULE_IDS = {
+    "fx": "POLICY-FX",
+    "period": "POLICY-PERIOD",
+    "allocation": "POLICY-ALLOC",
+    "duplicate": "POLICY-DUP",
+}
+
+
+@dataclass(frozen=True)
+class Discrepancy:
+    """Р Р°СЃС…РѕР¶РґРµРЅРёРµ, РІС‹РІРµРґРµРЅРЅРѕРµ РёР· РїСѓР±Р»РёС‡РЅС‹С… Р·Р°РїРёСЃРµР№."""
+
+    kind: str
+    keys: frozenset[str]
+    amount_minor: int
+    currency: str
+    support_variants: tuple[frozenset[str], ...]
+    detail: str
+
+    def signature(self) -> tuple:
+        """РљР°РЅРѕРЅРёС‡РµСЃРєРёР№ РєР»СЋС‡ РґР»СЏ СЃСЂР°РІРЅРµРЅРёСЏ СЃ СЌС‚Р°Р»РѕРЅРѕРј."""
+        return (self.kind, self.keys, self.amount_minor, self.currency)
+
+    def to_dict(self) -> dict:
+        return {
+            "kind": self.kind,
+            "keys": sorted(self.keys),
+            "amount_minor": self.amount_minor,
+            "currency": self.currency,
+            "support_variants": [sorted(group) for group in self.support_variants],
+            "detail": self.detail,
+        }
+
+
+def _variants(fixed: set[str], alternatives: list[tuple[str, ...]]) -> tuple[frozenset[str], ...]:
+    """Р’СЃРµ РґРѕСЃС‚Р°С‚РѕС‡РЅС‹Рµ РЅР°Р±РѕСЂС‹: С„РёРєСЃРёСЂРѕРІР°РЅРЅР°СЏ С‡Р°СЃС‚СЊ РїР»СЋСЃ РІС‹Р±РѕСЂ РїРѕ РєР°Р¶РґРѕРјСѓ С„Р°РєС‚Сѓ."""
+    cleaned = {value for value in fixed if value}
+    options = [tuple(value for value in group if value) for group in alternatives]
+    if any(not group for group in options):
+        # Р¤Р°РєС‚ РЅРµС‡РµРј РїРѕРґС‚РІРµСЂРґРёС‚СЊ: РІР°СЂРёР°РЅС‚РѕРІ РЅРµС‚, Рё СЌС‚Рѕ РїРѕР№РјР°РµС‚ verify.
+        return ()
+    return tuple(
+        frozenset(cleaned | set(combination)) for combination in product(*options)
+    )
+
+
+def reconstruct(snapshot: Snapshot) -> list[Discrepancy]:
+    """Р’СЃРµ СЂР°СЃС…РѕР¶РґРµРЅРёСЏ СЃРЅРёРјРєР° РІ РґРµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅРѕРј РїРѕСЂСЏРґРєРµ."""
+    rules = {**DEFAULT_RULE_IDS, **snapshot.rule_ids}
+    if not snapshot.period_start:
+        return []
+    tz = company_timezone(snapshot.period_start)
+
+    found = (
+        _period_identity(snapshot, rules, tz)
+        + _duplicate_identity(snapshot, rules)
+        + _allocation_identity(snapshot, rules, tz)
+        + _fx_identity(snapshot, rules, tz)
+    )
+    return sorted(found, key=lambda item: (item.kind, tuple(sorted(item.keys))))
+
+
+def _expense_rows(snapshot: Snapshot, invoice_id: str) -> list[dict]:
+    return [
+        row
+        for row in snapshot.ledger
+        if row.get("invoice_id") == invoice_id and row.get("role") == "expense"
+    ]
+
+
+def _period_identity(snapshot: Snapshot, rules: dict, tz) -> list[Discrepancy]:
+    """РўРѕР¶РґРµСЃС‚РІРѕ: РїРµСЂРёРѕРґ РїСЂРёР·РЅР°РЅРёСЏ СЂР°СЃС…РѕРґР° СЂР°РІРµРЅ РїРµСЂРёРѕРґСѓ РґР°С‚С‹ СѓСЃР»СѓРіРё."""
+    found: list[Discrepancy] = []
+    for invoice in snapshot.invoices:
+        invoice_id = invoice.get("invoice_id")
+        service_days = [
+            date.fromisoformat(item["service_date"])
+            for item in invoice.get("line_items") or []
+            if item.get("service_date")
+        ]
+        if type(invoice_id) is not str or not service_days:
+            continue
+        service_day = max(service_days)
+        service_inside = in_period(
+            service_day, snapshot.period_start, snapshot.period_end, tz
+        )
+
+        for row in _expense_rows(snapshot, invoice_id):
+            timestamp = row.get("timestamp")
+            if type(timestamp) is not str:
+                continue
+            recognition_day = local_date(timestamp, tz)
+            recognition_inside = in_period(
+                recognition_day, snapshot.period_start, snapshot.period_end, tz
+            )
+            if service_inside == recognition_inside:
+                continue
+            found.append(
+                Discrepancy(
+                    kind="period_cutoff",
+                    keys=frozenset({invoice_id, row["row_id"]}),
+                    amount_minor=row_amount_minor(row),
+                    currency=row.get("currency") or snapshot.base_currency,
+                    support_variants=_variants(
+                        {row["row_id"], rules["period"]},
+                        [(invoice.get("doc_id"), invoice_id)],
+                    ),
+                    detail=(
+                        f"СѓСЃР»СѓРіР° {service_day.isoformat()} РІРЅСѓС‚СЂРё РїРµСЂРёРѕРґР° "
+                        f"{service_inside}, РїСЂРёР·РЅР°РЅРёРµ "
+                        f"{recognition_day.isoformat()} РІРЅСѓС‚СЂРё РїРµСЂРёРѕРґР° "
+                        f"{recognition_inside}"
+                    ),
+                )
+            )
+    return found
+
+
+def _duplicate_identity(snapshot: Snapshot, rules: dict) -> list[Discrepancy]:
+    """РўРѕР¶РґРµСЃС‚РІРѕ: РѕРґРЅРѕ РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІРѕ РїСЂРѕРІРѕРґРёС‚СЃСЏ РЅРµ Р±РѕР»РµРµ РѕРґРЅРѕРіРѕ СЂР°Р·Р°."""
+    groups: dict[tuple, list[dict]] = {}
+    for invoice in snapshot.invoices:
+        obligations = frozenset(
+            item.get("obligation_id")
+            for item in invoice.get("line_items") or []
+            if item.get("obligation_id")
+        )
+        if not obligations:
+            continue
+        groups.setdefault((invoice.get("entity_id"), obligations), []).append(invoice)
+
+    found: list[Discrepancy] = []
+    for key in sorted(groups, key=lambda item: (str(item[0]), tuple(sorted(item[1])))):
+        posted = [
+            invoice
+            for invoice in groups[key]
+            if _expense_rows(snapshot, invoice.get("invoice_id"))
+        ]
+        if len(posted) < 2:
+            continue
+        ordered = sorted(
+            posted,
+            key=lambda invoice: (
+                invoice.get("issued_at") or "",
+                invoice.get("invoice_id") or "",
+            ),
+        )
+        original = ordered[0]
+        for duplicate in ordered[1:]:
+            row = _expense_rows(snapshot, duplicate["invoice_id"])[0]
+            found.append(
+                Discrepancy(
+                    kind="duplicate_invoice",
+                    keys=frozenset({duplicate["invoice_id"], row["row_id"]}),
+                    amount_minor=row_amount_minor(row),
+                    currency=row.get("currency") or snapshot.base_currency,
+                    support_variants=_variants(
+                        {row["row_id"], rules["duplicate"]},
+                        [
+                            (original.get("doc_id"), original.get("invoice_id")),
+                            (duplicate.get("doc_id"), duplicate.get("invoice_id")),
+                        ],
+                    ),
+                    detail=(
+                        f"РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІРѕ {sorted(key[1])} РїСЂРѕРІРµРґРµРЅРѕ Рё РїРѕ "
+                        f"{original.get('invoice_id')}, Рё РїРѕ "
+                        f"{duplicate.get('invoice_id')}"
+                    ),
+                )
+            )
+    return found
+
+
+def _allocation_identity(snapshot: Snapshot, rules: dict, tz) -> list[Discrepancy]:
+    """РўРѕР¶РґРµСЃС‚РІРѕ: СЂР°СЃРїСЂРµРґРµР»РµРЅРёРµ РІ Р¶СѓСЂРЅР°Р»Рµ СЂР°РІРЅРѕ РЅР°Р·РЅР°С‡РµРЅРёСЋ РІ РґРѕРєСѓРјРµРЅС‚Рµ."""
+    found: list[Discrepancy] = []
+    for payment in snapshot.payments:
+        payment_id = payment.get("payment_id")
+        timestamp = payment.get("timestamp")
+        if type(payment_id) is not str or type(timestamp) is not str:
+            continue
+        payment_day = local_date(timestamp, tz)
+
+        for reference in payment.get("invoice_refs") or []:
+            invoice_id = reference.get("invoice_id")
+            stated = reference.get("share_minor")
+            if type(invoice_id) is not str or type(stated) is not int:
+                continue
+            share_currency = reference.get("currency") or payment.get("currency")
+
+            allocation_rows = [
+                row
+                for row in snapshot.ledger
+                if row.get("payment_id") == payment_id
+                and row.get("invoice_id") == invoice_id
+                and row.get("role") == "allocation"
+            ]
+            allocated = sum(
+                row.get("source_minor")
+                if type(row.get("source_minor")) is int
+                else row_amount_minor(row)
+                for row in allocation_rows
+            )
+            missing = stated - allocated
+            if missing == 0:
+                continue
+
+            fixed = {row["row_id"] for row in allocation_rows}
+            fixed.add(rules["allocation"])
+
+            if share_currency == snapshot.base_currency:
+                amount = abs(missing)
+            else:
+                fx_row = snapshot.fx_rate(
+                    share_currency, snapshot.base_currency, payment_day.isoformat()
+                )
+                if fx_row is None:
+                    # РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РЅРµС‡РµРј: СЌС‚Рѕ Р»РѕРІРёС‚ РёРЅРІР°СЂРёР°РЅС‚ missing_fx_fixing.
+                    continue
+                amount = abs(
+                    convert_minor(
+                        missing,
+                        fx_row["rate"],
+                        snapshot.exponent(share_currency),
+                        snapshot.exponent(snapshot.base_currency),
+                    )
+                )
+                # РљСѓСЂСЃ РѕР±СЏР·Р°С‚РµР»РµРЅ РІ РЅР°Р±РѕСЂРµ: Р±РµР· РЅРµРіРѕ СЃСѓРјРјСѓ РЅРµ РІРѕСЃРїСЂРѕРёР·РІРµСЃС‚Рё.
+                fixed.add(fx_row.get("fx_id"))
+
+            found.append(
+                Discrepancy(
+                    kind="payment_allocation",
+                    keys=frozenset({invoice_id, payment_id}),
+                    amount_minor=amount,
+                    currency=snapshot.base_currency,
+                    support_variants=_variants(
+                        fixed, [(payment.get("doc_id"), payment_id)]
+                    ),
+                    detail=(
+                        f"РґРѕРєСѓРјРµРЅС‚ РѕС‚РЅРѕСЃРёС‚ {stated}, Р¶СѓСЂРЅР°Р» СЂР°СЃРїСЂРµРґРµР»СЏРµС‚ "
+                        f"{allocated} РІ {share_currency}"
+                    ),
+                )
+            )
+    return found
+
+
+def _fx_identity(snapshot: Snapshot, rules: dict, tz) -> list[Discrepancy]:
+    """РўРѕР¶РґРµСЃС‚РІРѕ: РґРµРЅРµР¶РЅР°СЏ СЃС‚СЂРѕРєР° РѕС†РµРЅРµРЅР° РїРѕ С„РёРєСЃРёРЅРіСѓ РЅР° РґР°С‚Сѓ РїР»Р°С‚РµР¶Р°."""
+    payment_by_id = {
+        payment.get("payment_id"): payment for payment in snapshot.payments
+    }
+
+    found: list[Discrepancy] = []
+    for row in snapshot.ledger:
+        if row.get("role") != "cash":
+            continue
+        source_currency = row.get("source_currency")
+        source_minor = row.get("source_minor")
+        if type(source_currency) is not str or source_currency == snapshot.base_currency:
+            continue
+        if type(source_minor) is not int:
+            continue
+
+        payment = payment_by_id.get(row.get("payment_id"))
+        timestamp = payment["timestamp"] if payment else row.get("timestamp")
+        if type(timestamp) is not str:
+            continue
+        rate_day = local_date(timestamp, tz)
+        fx_row = snapshot.fx_rate(
+            source_currency, snapshot.base_currency, rate_day.isoformat()
+        )
+        if fx_row is None:
+            continue
+
+        expected = convert_minor(
+            source_minor,
+            fx_row["rate"],
+            snapshot.exponent(source_currency),
+            snapshot.exponent(snapshot.base_currency),
+        )
+        recorded = row_amount_minor(row)
+        if expected == recorded:
+            continue
+
+        found.append(
+            Discrepancy(
+                kind="fx_conversion",
+                keys=frozenset({row.get("payment_id"), row["row_id"]} - {None}),
+                amount_minor=abs(expected - recorded),
+                currency=snapshot.base_currency,
+                support_variants=_variants(
+                    {row["row_id"], fx_row.get("fx_id"), rules["fx"]},
+                    [
+                        (
+                            payment.get("doc_id") if payment else None,
+                            payment.get("payment_id") if payment else None,
+                        )
+                    ],
+                ),
+                detail=(
+                    f"РїРѕ С„РёРєСЃРёРЅРіСѓ {fx_row.get('rate')} РЅР° {rate_day.isoformat()} "
+                    f"РѕР¶РёРґР°РµС‚СЃСЏ {expected}, РѕС‚СЂР°Р¶РµРЅРѕ {recorded}"
+                ),
+            )
+        )
+    return found
+
+

@@ -27,8 +27,9 @@ class FinAuditEnvironment:
 
     def __init__(self, seed=42):
         self.seed = seed
-        self.episode = None
         self.public = None
+        self.manifest = None
+        self.company = None
         self._truth = None
         self.steps = 0
         self.done = False
@@ -38,19 +39,21 @@ class FinAuditEnvironment:
         if seed is not None:
             self.seed = seed
 
-        self.episode = generate_episode(self.seed)
-        self.public = deepcopy(self.episode["public"])
+        episode = generate_episode(self.seed)
 
-        # Truth доступен только внутренней логике evaluator.
-        self._truth = deepcopy(self.episode["private"]["truth"])
+        self.public = deepcopy(episode["public"])
+        self.manifest = deepcopy(episode["manifest"])
+        self.company = deepcopy(episode["company"])
+
+        self._truth = deepcopy(episode["private"]["truth"])
 
         self.steps = 0
         self.done = False
         self.findings = []
 
         observation = {
-            "manifest": deepcopy(self.episode["manifest"]),
-            "company": deepcopy(self.episode["company"]),
+            "manifest": deepcopy(self.manifest),
+            "company": deepcopy(self.company),
             "policy": deepcopy(self.public["policy"]),
             "available_actions": [
                 "list_records",
@@ -221,7 +224,7 @@ class FinAuditEnvironment:
         return validated
 
     def step(self, action):
-        if self.episode is None:
+        if self.public is None:
             raise RuntimeError("Call reset() before step()")
 
         if self.done:

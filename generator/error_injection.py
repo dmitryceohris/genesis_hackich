@@ -117,7 +117,13 @@ def inject_errors(
     # -------------------------------------------------
 
     if "duplicate_invoice" in enabled_errors:
-        original = rng.choice(result_invoices)
+        purchase_invoices = [
+            invoice for invoice in result_invoices
+            if invoice.get("direction") == "purchase"
+        ]
+        if not purchase_invoices:
+            raise ValueError("No purchase invoice available for duplicate injection")
+        original = rng.choice(purchase_invoices)
         original_id = original["invoice_id"]
 
         duplicate_source_invoice_id = original_id
@@ -283,7 +289,8 @@ def inject_errors(
     if "accounting_period" in enabled_errors:
         eligible_invoices = [
             invoice for invoice in result_invoices
-            if not invoice["invoice_id"].startswith("INV-DUP-")
+            if invoice.get("direction") == "purchase"
+            and not invoice["invoice_id"].startswith("INV-DUP-")
             and any(
                 row["invoice_id"] == invoice["invoice_id"]
                 and row["payment_id"] is None

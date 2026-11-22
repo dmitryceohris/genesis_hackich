@@ -1,0 +1,30 @@
+{
+  "random": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "reward": -1.0,
+    "inspection_steps": 10.0
+  },
+  "reconciliation": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "reward": 0.92002,
+    "inspection_steps": 39.99
+  },
+  "mark_all": {
+    "precision": 0.004,
+    "recall": 0.03,
+    "f1": 0.007059,
+    "reward": -0.994682,
+    "inspection_steps": 39.99
+  },
+  "oracle_evaluator_only": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "reward": 1.0,
+    "inspection_steps": 0.0
+  }
+}
