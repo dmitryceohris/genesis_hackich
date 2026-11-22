@@ -165,6 +165,20 @@ def _finding(issue_type, affected_ids, amount_minor, currency, evidence_ids, exp
     }
 
 
+def _document_amount_minor(invoice: dict, row: dict) -> int:
+    """Сумма искажения по документу, а не по расходному плечу проводки.
+
+    Дубль счёта и сдвиг периода искажают книги на всю сумму документа, налог
+    включительно: проводка состоит из расходного плеча, налогового и
+    обязательства, и дублируется или переносится целиком. Расходное плечо —
+    только часть, и сумма занижалась ровно на налог.
+    """
+    total = invoice.get("total_minor")
+    if type(total) is int:
+        return total
+    return row_amount_minor(row)
+
+
 def _detect_period_cutoff(context: _Context) -> list[dict]:
     """Услуга внутри периода, а признание расхода — за его границей."""
     findings = []
@@ -190,7 +204,7 @@ def _detect_period_cutoff(context: _Context) -> list[dict]:
                 _finding(
                     "period_cutoff",
                     [invoice_id, row["row_id"]],
-                    row_amount_minor(row),
+                    _document_amount_minor(invoice, row),
                     row.get("currency") or context.base_currency,
                     [invoice.get("doc_id"), row["row_id"], context.rule_ids["period"]],
                     (
@@ -239,7 +253,7 @@ def _detect_duplicate_invoices(context: _Context) -> list[dict]:
                 _finding(
                     "duplicate_invoice",
                     [duplicate["invoice_id"], row["row_id"]],
-                    row_amount_minor(row),
+                    _document_amount_minor(duplicate, row),
                     row.get("currency") or context.base_currency,
                     [
                         original.get("doc_id"),

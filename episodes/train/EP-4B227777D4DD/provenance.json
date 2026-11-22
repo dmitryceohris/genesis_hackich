@@ -1,9 +1,7 @@
 {
-  "derivation_disagreements": [
+  "affected_ids_naming": [
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0001",
-      "field": "affected_ids",
       "generator": [
         "INV-4B227777D4DD-00025",
         "INV-DUP-4B227777D4DD-0001"
@@ -12,20 +10,13 @@
       "reconstruction": [
         "INV-DUP-4B227777D4DD-0001",
         "INV-DUP-4B227777D4DD-0001-ENTRY-000"
+      ],
+      "shared": [
+        "INV-DUP-4B227777D4DD-0001"
       ]
     },
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0004",
-      "field": "amount_minor",
-      "generator": 456427,
-      "official_type": "period_cutoff",
-      "reconstruction": 407524
-    },
-    {
-      "adopted": "reconstruction",
-      "error_id": "ERR-0004",
-      "field": "affected_ids",
       "generator": [
         "INV-4B227777D4DD-00015",
         "INV-POST-INV-4B227777D4DD-00015-000042",
@@ -36,9 +27,14 @@
       "reconstruction": [
         "INV-4B227777D4DD-00015",
         "INV-POST-INV-4B227777D4DD-00015-000042"
+      ],
+      "shared": [
+        "INV-4B227777D4DD-00015",
+        "INV-POST-INV-4B227777D4DD-00015-000042"
       ]
     }
   ],
+  "derivation_disagreements": [],
   "episode_id": "EP-4B227777D4DD",
   "records": [
     {

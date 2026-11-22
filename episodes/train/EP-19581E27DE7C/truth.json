@@ -33,7 +33,7 @@
         "INV-DUP-19581E27DE7C-0001-ENTRY-000"
       ],
       "currency": "KZT",
-      "expected_amount_minor": 1204619,
+      "expected_amount_minor": 1325081,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-19581E27DE7C-00033-000091"
       ],
       "currency": "KZT",
-      "expected_amount_minor": 2555220,
+      "expected_amount_minor": 2682981,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

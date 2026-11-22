@@ -33,7 +33,7 @@
         "INV-POST-INV-E7F6C011776E-00045-000127"
       ],
       "currency": "GBP",
-      "expected_amount_minor": 1642163,
+      "expected_amount_minor": 1839223,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-E7F6C011776E-00027-000077"
       ],
       "currency": "GBP",
-      "expected_amount_minor": 1378716,
+      "expected_amount_minor": 1544162,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

@@ -1,17 +1,7 @@
 {
-  "derivation_disagreements": [
+  "affected_ids_naming": [
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0001",
-      "field": "amount_minor",
-      "generator": 2391885,
-      "official_type": "duplicate_invoice",
-      "reconstruction": 2135612
-    },
-    {
-      "adopted": "reconstruction",
-      "error_id": "ERR-0001",
-      "field": "affected_ids",
       "generator": [
         "INV-7902699BE42C-00003",
         "INV-DUP-7902699BE42C-0001"
@@ -20,20 +10,13 @@
       "reconstruction": [
         "INV-DUP-7902699BE42C-0001",
         "INV-DUP-7902699BE42C-0001-ENTRY-000"
+      ],
+      "shared": [
+        "INV-DUP-7902699BE42C-0001"
       ]
     },
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0004",
-      "field": "amount_minor",
-      "generator": 115328,
-      "official_type": "period_cutoff",
-      "reconstruction": 104844
-    },
-    {
-      "adopted": "reconstruction",
-      "error_id": "ERR-0004",
-      "field": "affected_ids",
       "generator": [
         "INV-7902699BE42C-00012",
         "INV-POST-INV-7902699BE42C-00012-000032",
@@ -44,9 +27,14 @@
       "reconstruction": [
         "INV-7902699BE42C-00012",
         "INV-POST-INV-7902699BE42C-00012-000032"
+      ],
+      "shared": [
+        "INV-7902699BE42C-00012",
+        "INV-POST-INV-7902699BE42C-00012-000032"
       ]
     }
   ],
+  "derivation_disagreements": [],
   "episode_id": "EP-7902699BE42C",
   "records": [
     {

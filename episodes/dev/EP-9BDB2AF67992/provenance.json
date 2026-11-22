@@ -1,9 +1,7 @@
 {
-  "derivation_disagreements": [
+  "affected_ids_naming": [
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0001",
-      "field": "affected_ids",
       "generator": [
         "INV-9BDB2AF67992-00000",
         "INV-DUP-9BDB2AF67992-0001"
@@ -12,12 +10,13 @@
       "reconstruction": [
         "INV-DUP-9BDB2AF67992-0001",
         "INV-DUP-9BDB2AF67992-0001-ENTRY-000"
+      ],
+      "shared": [
+        "INV-DUP-9BDB2AF67992-0001"
       ]
     },
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0004",
-      "field": "affected_ids",
       "generator": [
         "INV-9BDB2AF67992-00048",
         "INV-POST-INV-9BDB2AF67992-00048-000133",
@@ -27,9 +26,14 @@
       "reconstruction": [
         "INV-9BDB2AF67992-00048",
         "INV-POST-INV-9BDB2AF67992-00048-000133"
+      ],
+      "shared": [
+        "INV-9BDB2AF67992-00048",
+        "INV-POST-INV-9BDB2AF67992-00048-000133"
       ]
     }
   ],
+  "derivation_disagreements": [],
   "episode_id": "EP-9BDB2AF67992",
   "records": [
     {

@@ -33,7 +33,7 @@
         "INV-POST-INV-EF2D127DE37B-00025-000071"
       ],
       "currency": "KZT",
-      "expected_amount_minor": 1499658,
+      "expected_amount_minor": 1574641,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-EF2D127DE37B-00016-000045"
       ],
       "currency": "KZT",
-      "expected_amount_minor": 1512550,
+      "expected_amount_minor": 1588178,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

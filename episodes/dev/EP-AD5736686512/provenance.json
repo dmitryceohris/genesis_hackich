@@ -1,17 +1,7 @@
 {
-  "derivation_disagreements": [
+  "affected_ids_naming": [
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0001",
-      "field": "amount_minor",
-      "generator": 1937587,
-      "official_type": "duplicate_invoice",
-      "reconstruction": 1729988
-    },
-    {
-      "adopted": "reconstruction",
-      "error_id": "ERR-0001",
-      "field": "affected_ids",
       "generator": [
         "INV-AD5736686512-00004",
         "INV-DUP-AD5736686512-0001"
@@ -20,20 +10,13 @@
       "reconstruction": [
         "INV-DUP-AD5736686512-0001",
         "INV-DUP-AD5736686512-0001-ENTRY-000"
+      ],
+      "shared": [
+        "INV-DUP-AD5736686512-0001"
       ]
     },
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0004",
-      "field": "amount_minor",
-      "generator": 1937587,
-      "official_type": "period_cutoff",
-      "reconstruction": 1729988
-    },
-    {
-      "adopted": "reconstruction",
-      "error_id": "ERR-0004",
-      "field": "affected_ids",
       "generator": [
         "INV-AD5736686512-00004",
         "INV-POST-INV-AD5736686512-00004-000011",
@@ -44,9 +27,14 @@
       "reconstruction": [
         "INV-AD5736686512-00004",
         "INV-POST-INV-AD5736686512-00004-000011"
+      ],
+      "shared": [
+        "INV-AD5736686512-00004",
+        "INV-POST-INV-AD5736686512-00004-000011"
       ]
     }
   ],
+  "derivation_disagreements": [],
   "episode_id": "EP-AD5736686512",
   "records": [
     {

@@ -33,7 +33,7 @@
         "INV-DUP-D4735E3A265E-0001-ENTRY-000"
       ],
       "currency": "USD",
-      "expected_amount_minor": 2765341,
+      "expected_amount_minor": 3041875,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },

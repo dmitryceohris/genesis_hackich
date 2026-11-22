@@ -33,7 +33,7 @@
         "INV-DUP-2C624232CDD2-0001-ENTRY-000"
       ],
       "currency": "KZT",
-      "expected_amount_minor": 1011333,
+      "expected_amount_minor": 1132693,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },

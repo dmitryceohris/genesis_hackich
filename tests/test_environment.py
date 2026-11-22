@@ -348,19 +348,96 @@ class DerivationCrossCheckTests(unittest.TestCase):
                 self.assertEqual(item["adopted"], "reconstruction")
                 self.assertNotEqual(item["generator"], item["reconstruction"])
 
-    def test_fx_and_allocation_are_cross_validated(self):
-        """По этим двум типам обе стороны считают одно и то же.
+    def test_no_type_disagrees_about_the_facts(self):
+        """Ни по одному типу две стороны не расходятся о типе, сумме и валюте.
 
-        Значит их суммы и записи подтверждены независимо, а не только
-        собственным выводом валидатора.
+        Это и есть снятая круговая зависимость: эталон берёт числа из
+        реконструкции, но те же числа независимо записал генератор при
+        внесении. Если правка в одной из сторон разойдётся с другой, тест
+        упадёт и назовёт тип и оба значения.
         """
-        agreed = {"fx_conversion", "payment_allocation"}
-        for item in self.disagreements:
+        self.assertEqual(
+            self.disagreements,
+            [],
+            "расхождение о факте между записью о внесении и реконструкцией",
+        )
+
+    def test_identity_naming_differs_but_always_overlaps(self):
+        """Разные слова об одном событии — не расхождение о факте.
+
+        Генератор называет оба счёта, реконструкция — счёт и строку журнала.
+        Наборы обязаны пересекаться: пустое пересечение означало бы, что
+        стороны говорят о разных событиях, и это уже попало бы в
+        derivation_disagreements.
+        """
+        for item in self.episode["provenance"]["affected_ids_naming"]:
             with self.subTest(error=item["error_id"]):
-                self.assertNotIn(item["official_type"], agreed)
+                self.assertTrue(item["shared"])
+                self.assertNotEqual(item["generator"], item["reconstruction"])
 
     def test_every_disagreement_names_a_declared_issue(self):
         declared = {issue["issue_id"] for issue in self.episode["truth"]["issues"]}
         for item in self.disagreements:
             with self.subTest(error=item["error_id"]):
                 self.assertIn(item["error_id"], declared)
+
+
+class IsolatedRunnerTests(unittest.TestCase):
+    """Политика через официальный протокол, как её запускает контейнер.
+
+    Раньше этот путь не был проверен ни одним тестом: базовые линии гоняли
+    политики против плоского вида ядра, а жюри и контейнер подают протокольный.
+    Политика молча находила ноль расхождений — не падала, просто не видела
+    данных. Теперь обе формы проверяются.
+    """
+
+    def test_reconcile_solves_an_episode_through_the_protocol(self):
+        import tempfile
+
+        from evaluator import score
+        from evaluator.episode_io import write_episode
+        from runner.run_agent import load_policy, run
+        from validator.snapshot import public_snapshot, reachable_ids
+
+        episode = build_episode(SEED)
+        with tempfile.TemporaryDirectory() as directory:
+            write_episode(episode, directory)
+            result = run(load_policy("reconcile"), directory, SEED)
+
+        available = frozenset(reachable_ids(public_snapshot(episode)))
+        report = score(
+            result["submission"],
+            episode["truth"],
+            result["inspection_steps"],
+            truncated=result["truncated"],
+            available_evidence_ids=available,
+        )
+        self.assertTrue(report.valid)
+        self.assertEqual(report.f1, 1.0, "через протокол решаемость та же")
+        self.assertEqual(report.fp, 0)
+        self.assertEqual(report.fn, 0)
+
+    def test_runner_never_imports_the_truth_side(self):
+        """В контейнер агента не должен попадать путь к эталону."""
+        import ast
+        from pathlib import Path
+
+        forbidden = {"generator", "validator", "integration"}
+        for path in Path("runner").rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for node in ast.walk(tree):
+                names = []
+                if isinstance(node, ast.Import):
+                    names = [alias.name.split(".")[0] for alias in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                    names = [node.module.split(".")[0]]
+                for name in names:
+                    with self.subTest(module=path.name, imported=name):
+                        self.assertNotIn(name, forbidden)
+
+    def test_both_observation_shapes_are_understood(self):
+        from policies.base import page_records
+
+        self.assertEqual(page_records({"records": [{"a": 1}]}), [{"a": 1}])
+        self.assertEqual(page_records({"rows": [{"a": 1}]}), [{"a": 1}])
+        self.assertEqual(page_records({}), [])

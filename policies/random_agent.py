@@ -19,6 +19,7 @@ from .base import (
     get_document,
     get_record,
     list_records,
+    page_records,
     remaining_steps,
     submit,
 )
@@ -83,7 +84,7 @@ class RandomExplorer(Policy):
         result = observation.get("result")
         if not isinstance(result, dict):
             return
-        rows = result.get("rows")
+        rows = page_records(result) or None
         if not isinstance(rows, list):
             return
         table = result.get("table")

@@ -1,17 +1,7 @@
 {
-  "derivation_disagreements": [
+  "affected_ids_naming": [
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0001",
-      "field": "amount_minor",
-      "generator": 1132693,
-      "official_type": "duplicate_invoice",
-      "reconstruction": 1011333
-    },
-    {
-      "adopted": "reconstruction",
-      "error_id": "ERR-0001",
-      "field": "affected_ids",
       "generator": [
         "INV-2C624232CDD2-00024",
         "INV-DUP-2C624232CDD2-0001"
@@ -20,12 +10,13 @@
       "reconstruction": [
         "INV-DUP-2C624232CDD2-0001",
         "INV-DUP-2C624232CDD2-0001-ENTRY-000"
+      ],
+      "shared": [
+        "INV-DUP-2C624232CDD2-0001"
       ]
     },
     {
-      "adopted": "reconstruction",
       "error_id": "ERR-0004",
-      "field": "affected_ids",
       "generator": [
         "INV-2C624232CDD2-00000",
         "INV-POST-INV-2C624232CDD2-00000-000000",
@@ -35,9 +26,14 @@
       "reconstruction": [
         "INV-2C624232CDD2-00000",
         "INV-POST-INV-2C624232CDD2-00000-000000"
+      ],
+      "shared": [
+        "INV-2C624232CDD2-00000",
+        "INV-POST-INV-2C624232CDD2-00000-000000"
       ]
     }
   ],
+  "derivation_disagreements": [],
   "episode_id": "EP-2C624232CDD2",
   "records": [
     {

@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 #: Каталоги с нашим кодом.
 PACKAGES = (
+    "runner",
     "evaluator",
     "policies",
     "validator",

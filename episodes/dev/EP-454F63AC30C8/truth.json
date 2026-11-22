@@ -33,7 +33,7 @@
         "INV-DUP-454F63AC30C8-0001-ENTRY-000"
       ],
       "currency": "EUR",
-      "expected_amount_minor": 993603,
+      "expected_amount_minor": 1043283,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-454F63AC30C8-00019-000053"
       ],
       "currency": "EUR",
-      "expected_amount_minor": 993603,
+      "expected_amount_minor": 1043283,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

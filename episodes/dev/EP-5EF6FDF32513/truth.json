@@ -33,7 +33,7 @@
         "INV-DUP-5EF6FDF32513-0001-ENTRY-000"
       ],
       "currency": "EUR",
-      "expected_amount_minor": 135280,
+      "expected_amount_minor": 151514,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-5EF6FDF32513-00040-000108"
       ],
       "currency": "EUR",
-      "expected_amount_minor": 438000,
+      "expected_amount_minor": 481800,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

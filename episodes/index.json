@@ -10,7 +10,7 @@
         ],
         "interaction_scenario": "duplicate_period"
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-AD5736686512",
       "issue_count": 4,
       "issue_types": [
@@ -35,7 +35,7 @@
         ],
         "interaction_scenario": null
       },
-      "derivation_disagreements": 1,
+      "derivation_disagreements": 0,
       "episode_id": "EP-37834F2F2576",
       "issue_count": 3,
       "issue_types": [
@@ -59,7 +59,7 @@
         ],
         "interaction_scenario": "duplicate_period"
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-454F63AC30C8",
       "issue_count": 4,
       "issue_types": [
@@ -84,7 +84,7 @@
         ],
         "interaction_scenario": "payment_period"
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-5EF6FDF32513",
       "issue_count": 4,
       "issue_types": [
@@ -109,7 +109,7 @@
         ],
         "interaction_scenario": null
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-1253E9373E78",
       "issue_count": 4,
       "issue_types": [
@@ -134,7 +134,7 @@
         ],
         "interaction_scenario": "duplicate_period"
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-482D9673CFEE",
       "issue_count": 4,
       "issue_types": [
@@ -159,7 +159,7 @@
         ],
         "interaction_scenario": "payment_period"
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-3346F2BBF6C3",
       "issue_count": 4,
       "issue_types": [
@@ -184,7 +184,7 @@
         ],
         "interaction_scenario": null
       },
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-9537F32EC759",
       "issue_count": 4,
       "issue_types": [
@@ -209,7 +209,7 @@
         ],
         "interaction_scenario": "duplicate_period"
       },
-      "derivation_disagreements": 2,
+      "derivation_disagreements": 0,
       "episode_id": "EP-0FD42B3F73C4",
       "issue_count": 4,
       "issue_types": [
@@ -234,7 +234,7 @@
         ],
         "interaction_scenario": "payment_period"
       },
-      "derivation_disagreements": 2,
+      "derivation_disagreements": 0,
       "episode_id": "EP-9BDB2AF67992",
       "issue_count": 4,
       "issue_types": [
@@ -273,7 +273,7 @@
   "train": [
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-5FECEB66FFC8",
       "issue_count": 4,
       "issue_types": [
@@ -290,7 +290,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-6B86B273FF34",
       "issue_count": 4,
       "issue_types": [
@@ -307,7 +307,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 3,
+      "derivation_disagreements": 0,
       "episode_id": "EP-D4735E3A265E",
       "issue_count": 4,
       "issue_types": [
@@ -324,7 +324,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-4E07408562BE",
       "issue_count": 4,
       "issue_types": [
@@ -341,7 +341,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 3,
+      "derivation_disagreements": 0,
       "episode_id": "EP-4B227777D4DD",
       "issue_count": 4,
       "issue_types": [
@@ -358,7 +358,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-EF2D127DE37B",
       "issue_count": 4,
       "issue_types": [
@@ -375,7 +375,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-E7F6C011776E",
       "issue_count": 4,
       "issue_types": [
@@ -392,7 +392,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-7902699BE42C",
       "issue_count": 4,
       "issue_types": [
@@ -409,7 +409,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 3,
+      "derivation_disagreements": 0,
       "episode_id": "EP-2C624232CDD2",
       "issue_count": 4,
       "issue_types": [
@@ -426,7 +426,7 @@
     },
     {
       "config": {},
-      "derivation_disagreements": 4,
+      "derivation_disagreements": 0,
       "episode_id": "EP-19581E27DE7C",
       "issue_count": 4,
       "issue_types": [

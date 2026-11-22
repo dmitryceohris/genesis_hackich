@@ -185,6 +185,7 @@ def adapt_episode(episode):
     issues = []
     undeclarable = []
     disagreements = []
+    naming = []
 
     for item in private["truth"]:
         expected_kind = type_map[item["type"]]
@@ -252,7 +253,14 @@ def adapt_episode(episode):
                 "reconstruction": reconstructed_amount,
                 "adopted": "reconstruction",
             })
-        if expected_ids and expected_ids != reconstructed_ids:
+        # По составу ID две стороны расходятся только если говорят о разных
+        # событиях, то есть множества не пересекаются вовсе. Пересекающиеся
+        # наборы при совпавших типе и сумме описывают одну и ту же ошибку
+        # разными словами: генератор называет оба счёта, реконструкция —
+        # счёт и строку журнала. Это соглашение об именовании, и путать его с
+        # расхождением о факте нельзя — иначе таблица расхождений перестаёт
+        # что-либо значить.
+        if expected_ids and not (expected_ids & reconstructed_ids):
             disagreements.append({
                 "error_id": item["error_id"],
                 "official_type": expected_kind,
@@ -260,6 +268,14 @@ def adapt_episode(episode):
                 "generator": sorted(expected_ids),
                 "reconstruction": sorted(reconstructed_ids),
                 "adopted": "reconstruction",
+            })
+        elif expected_ids != reconstructed_ids:
+            naming.append({
+                "error_id": item["error_id"],
+                "official_type": expected_kind,
+                "generator": sorted(expected_ids),
+                "reconstruction": sorted(reconstructed_ids),
+                "shared": sorted(expected_ids & reconstructed_ids),
             })
 
         issues.append({
@@ -305,5 +321,6 @@ def adapt_episode(episode):
             "undeclarable": undeclarable,
             "undeclarable_provenance": dropped_provenance,
             "derivation_disagreements": disagreements,
+            "affected_ids_naming": naming,
         },
     }

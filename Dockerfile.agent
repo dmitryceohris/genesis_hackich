@@ -1,0 +1,46 @@
+# Контейнер изоляции агента.
+#
+# Отличается от Dockerfile обязательной проверки по назначению: тот прогоняет
+# наши собственные тесты, этот запускает чужой код — политику агента — и
+# обязан не дать ему ни сети, ни записи, ни эталона.
+#
+# Базовый образ закрепляется по digest перед сдачей, а не по тегу: тег
+# подвижен, и сборка на другой машине дала бы другой образ.
+#   docker pull python:3.11-slim
+#   docker image inspect python:3.11-slim --format '{{index .RepoDigests 0}}'
+# Полученное значение подставляется ниже вместо тега.
+FROM python:3.11-slim
+
+# Зависимостей времени выполнения нет: только стандартная библиотека. Поэтому
+# ни pip install, ни сети при сборке. Это проверяется шагом обязательного
+# прогона, а не обещано на словах.
+
+# Непривилегированный пользователь без домашнего каталога и без оболочки:
+# процессу агента незачем ни то, ни другое.
+RUN useradd --no-create-home --shell /usr/sbin/nologin --uid 10001 agent
+
+WORKDIR /app
+
+# Внутрь кладётся только то, что нужно агенту для хода: протокол среды,
+# политики и то, на что они опираются. Каталоги generator/, validator/,
+# evaluator/oracle.py и наборы эпизодов НЕ копируются — агент не должен иметь
+# физической возможности прочитать эталон, даже ошибкой в коде.
+COPY --chown=root:root environment/ ./environment/
+COPY --chown=root:root policies/ ./policies/
+COPY --chown=root:root evaluator/contract.py evaluator/__init__.py ./evaluator/
+COPY --chown=root:root runner/ ./runner/
+
+# Код принадлежит root и доступен агенту только на чтение и исполнение.
+RUN chmod -R a-w /app
+
+USER agent
+
+# Никаких секретов в окружении. PYTHONDONTWRITEBYTECODE нужен потому, что
+# корень смонтирован только для чтения: иначе интерпретатор попытается писать
+# .pyc и упадёт.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED=0 \
+    HOME=/nonexistent
+
+ENTRYPOINT ["python", "-I", "-m", "runner.run_agent"]

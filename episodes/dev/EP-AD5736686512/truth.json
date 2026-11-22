@@ -33,7 +33,7 @@
         "INV-DUP-AD5736686512-0001-ENTRY-000"
       ],
       "currency": "GBP",
-      "expected_amount_minor": 1729988,
+      "expected_amount_minor": 1937587,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-AD5736686512-00004-000011"
       ],
       "currency": "GBP",
-      "expected_amount_minor": 1729988,
+      "expected_amount_minor": 1937587,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

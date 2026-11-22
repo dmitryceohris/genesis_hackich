@@ -33,7 +33,7 @@
         "INV-DUP-482D9673CFEE-0001-ENTRY-000"
       ],
       "currency": "USD",
-      "expected_amount_minor": 1560372,
+      "expected_amount_minor": 1747617,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-482D9673CFEE-00022-000062"
       ],
       "currency": "USD",
-      "expected_amount_minor": 1560372,
+      "expected_amount_minor": 1747617,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

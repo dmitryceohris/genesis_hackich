@@ -101,7 +101,7 @@
         "INV-POST-INV-4B227777D4DD-00015-000042"
       ],
       "currency": "KZT",
-      "expected_amount_minor": 407524,
+      "expected_amount_minor": 456427,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

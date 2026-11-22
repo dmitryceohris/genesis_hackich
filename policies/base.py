@@ -54,6 +54,23 @@ def submit(episode_id: str, findings: list[dict]) -> Action:
 
 # --- вспомогательное ----------------------------------------------------------
 
+def page_records(result: dict) -> list[dict]:
+    """Строки страницы из ответа ``list_records``.
+
+    Протокол жюри называет их ``records``, внутренний плоский вид ядра —
+    ``rows``. Политика обязана работать через обе формы: через ``records`` её
+    запускает жюри и контейнер изоляции, через ``rows`` — тесты и матрица
+    базовых линий. Разбирать это в каждой политике отдельно значило бы, что
+    однажды одна из них перестанет видеть данные молча, без падения — ровно
+    так и случилось в контейнере, где политика находила ноль расхождений.
+    """
+    records = result.get("records")
+    if isinstance(records, list):
+        return records
+    rows = result.get("rows")
+    return rows if isinstance(rows, list) else []
+
+
 def remaining_steps(observation: Observation, default: int = 0) -> int:
     value = observation.get("remaining_steps", default)
     return value if type(value) is int else default
@@ -109,7 +126,7 @@ class Policy:
             if not isinstance(result, dict):
                 # Ограниченная ошибка: шаг израсходован, страницу не получили.
                 return rows, observation
-            rows.extend(result.get("rows") or [])
+            rows.extend(page_records(result))
             cursor = result.get("next_cursor")
             if cursor is None:
                 return rows, observation

@@ -33,7 +33,7 @@
         "INV-DUP-7902699BE42C-0001-ENTRY-000"
       ],
       "currency": "EUR",
-      "expected_amount_minor": 2135612,
+      "expected_amount_minor": 2391885,
       "issue_id": "ERR-0001",
       "type": "duplicate_invoice"
     },
@@ -101,7 +101,7 @@
         "INV-POST-INV-7902699BE42C-00012-000032"
       ],
       "currency": "EUR",
-      "expected_amount_minor": 104844,
+      "expected_amount_minor": 115328,
       "issue_id": "ERR-0004",
       "type": "period_cutoff"
     }

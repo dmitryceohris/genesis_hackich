@@ -93,6 +93,23 @@ def _expense_rows(snapshot: Snapshot, invoice_id: str) -> list[dict]:
     ]
 
 
+def _document_amount_minor(invoice: dict, row: dict) -> int:
+    """Сумма искажения по документу, а не по расходному плечу проводки.
+
+    Дубль счёта и сдвиг периода искажают книги на всю сумму документа, налог
+    включительно: проводка состоит из расходного плеча, налогового и
+    обязательства, и переносится или дублируется она целиком. Расходное плечо
+    — только часть, и раньше сумма занижалась ровно на налог.
+
+    ``total_minor`` берётся с документа, если он есть; иначе остаётся сумма
+    строки, чтобы проверка работала и на книге без документов.
+    """
+    total = invoice.get("total_minor")
+    if type(total) is int:
+        return total
+    return row_amount_minor(row)
+
+
 def _period_identity(snapshot: Snapshot, rules: dict, tz) -> list[Discrepancy]:
     """Тождество: период признания расхода равен периоду даты услуги."""
     found: list[Discrepancy] = []
@@ -124,7 +141,7 @@ def _period_identity(snapshot: Snapshot, rules: dict, tz) -> list[Discrepancy]:
                 Discrepancy(
                     kind="period_cutoff",
                     keys=frozenset({invoice_id, row["row_id"]}),
-                    amount_minor=row_amount_minor(row),
+                    amount_minor=_document_amount_minor(invoice, row),
                     currency=row.get("currency") or snapshot.base_currency,
                     support_variants=_variants(
                         {row["row_id"], rules["period"]},
@@ -177,7 +194,7 @@ def _duplicate_identity(snapshot: Snapshot, rules: dict) -> list[Discrepancy]:
                 Discrepancy(
                     kind="duplicate_invoice",
                     keys=frozenset({duplicate["invoice_id"], row["row_id"]}),
-                    amount_minor=row_amount_minor(row),
+                    amount_minor=_document_amount_minor(duplicate, row),
                     currency=row.get("currency") or snapshot.base_currency,
                     support_variants=_variants(
                         {row["row_id"], rules["duplicate"]},
