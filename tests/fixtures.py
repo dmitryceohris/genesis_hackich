@@ -37,12 +37,14 @@ policy
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 PERIOD_START = "2026-03-01T00:00:00+05:00"
 PERIOD_END = "2026-04-01T00:00:00+05:00"
 TIMEZONE = "Asia/Almaty"
 UTC_OFFSET_HOURS = 5
 
-_POLICY = {
+_POLICY_BASE = {
     "policy_id": "POLICY-V1",
     "fx_rate_date": "payment_date",
     "expense_recognition": "service_date",
@@ -57,6 +59,39 @@ _POLICY = {
         "duplicate": "POLICY-DUP",
     },
 }
+
+# Каждое правило — отдельная запись таблицы policy, а не только значение внутри
+# базовой записи. Иначе ``POLICY-PERIOD`` в наборе доказательств недостижим
+# через ``get_record("policy", ...)``, и эталон ссылается на то, чего агент не
+# может получить. Независимая проверка эталона это и поймала.
+_POLICY_RULES = [
+    {
+        "policy_id": "POLICY-FX",
+        "rule": "fx_rate_date",
+        "value": "payment_date",
+        "description": "Курс берётся на дату платежа по календарю компании.",
+    },
+    {
+        "policy_id": "POLICY-PERIOD",
+        "rule": "expense_recognition",
+        "value": "service_date",
+        "description": "Расход признаётся в периоде даты оказания услуги.",
+    },
+    {
+        "policy_id": "POLICY-ALLOC",
+        "rule": "allocation",
+        "value": "document_shares",
+        "description": "Распределение платежа следует назначению в документе.",
+    },
+    {
+        "policy_id": "POLICY-DUP",
+        "rule": "duplicate",
+        "value": "one_posting_per_obligation",
+        "description": "Одно обязательство проводится не более одного раза.",
+    },
+]
+
+_POLICY_TABLE = [_POLICY_BASE] + _POLICY_RULES
 
 
 def _manifest(episode_id: str, ledger, invoices, payments) -> dict:
@@ -118,7 +153,9 @@ def _episode(episode_id, ledger, invoices, payments, fx, issues):
         "invoices": invoices,
         "payments": payments,
         "fx": fx,
-        "policy": [_POLICY],
+        # Глубокая копия: ``rule_ids`` — вложенный словарь, и при поверхностной
+        # копии тест, меняющий его в одном эпизоде, менял бы все остальные.
+        "policy": deepcopy(_POLICY_TABLE),
         "truth": {"episode_id": episode_id, "issues": issues},
     }
 
@@ -468,8 +505,10 @@ def _interacting_episode() -> dict:
             # Недостающие 10.00 EUR по верному курсу: 1000 * 1.25 = 1250.
             "expected_amount_minor": 1250,
             "currency": "USD",
+            # FX-2 входит в набор обязательно: без курса сумму 1250 из
+            # публичных записей не вывести, и набор был бы недостаточным.
             "acceptable_evidence_sets": [
-                ["D-PAY-21", "R-21", "R-22", "POLICY-ALLOC"],
+                ["D-PAY-21", "R-21", "FX-2", "POLICY-ALLOC"],
             ],
         },
     ]

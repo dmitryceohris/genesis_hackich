@@ -314,6 +314,10 @@ def _detect_payment_allocation(context: _Context) -> list[dict]:
             ]
             evidence = [payment.get("doc_id")]
             evidence += [row["row_id"] for row in allocation_rows]
+            if fx_row is not None:
+                # Курс, по которому пересчитана недостающая доля, обязан быть
+                # в доказательствах: без него сумму не воспроизвести.
+                evidence.append(fx_row.get("fx_id"))
             evidence += [row["row_id"] for row in suspense_rows]
             evidence.append(context.rule_ids["allocation"])
 
