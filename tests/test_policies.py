@@ -15,6 +15,7 @@ from evaluator import MAX_FINDINGS, build_oracle_submission, score, validate_sub
 from policies import MarkAllAgent, Policy, RandomExplorer, ReconciliationAgent
 from tests.fake_env import FakeEnv, run_policy
 from tests.fixtures import EPISODE_IDS, build_episode
+from validator import public_snapshot, reachable_ids
 
 EXPECTED_ISSUE_COUNT = {
     "EP-CLEAN": 0,
@@ -27,11 +28,15 @@ EXPECTED_ISSUE_COUNT = {
 def evaluate(episode: dict, policy: Policy):
     env = FakeEnv(episode)
     outcome = run_policy(env, policy)
+    # Множество достижимых ID передаётся всегда: иначе политика могла бы
+    # получить TP за выдуманное доказательство, и проверка решаемости стала бы
+    # слабее, чем правила жюри.
     report = score(
         outcome["submission"],
         env.truth,
         outcome["inspection_steps"],
         truncated=outcome["truncated"],
+        available_evidence_ids=frozenset(reachable_ids(public_snapshot(episode))),
     )
     return outcome, report
 
@@ -225,6 +230,57 @@ class OracleIsolationTests(unittest.TestCase):
                 for policy in (ReconciliationAgent(), MarkAllAgent(), RandomExplorer()):
                     _, report = evaluate(build_episode(episode_id), policy)
                     self.assertGreaterEqual(oracle.reward, report.reward)
+
+
+class AccessBoundaryTests(unittest.TestCase):
+    """Определения проверок: политика не импортирует оценщик."""
+
+    def test_no_policy_module_imports_the_evaluator(self):
+        """Статическая проверка, а не проверка поведения.
+
+        Раздел «Граница доступа»: политика «не импортирует оценщик и не
+        получает доступ к каталогу эпизода», и там же: «Простое сокрытие полей
+        в Python-объекте не считается изоляцией». Поэтому проверяется сам факт
+        импорта, а не то, что через него ничего закрытого не прошло.
+        """
+        import ast
+        import pathlib
+
+        offenders: list[str] = []
+        policies_dir = pathlib.Path(__file__).resolve().parent.parent / "policies"
+
+        for path in sorted(policies_dir.rglob("*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for node in ast.walk(tree):
+                modules: list[str] = []
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    modules = [node.module]
+                elif isinstance(node, ast.Import):
+                    modules = [alias.name for alias in node.names]
+                for module in modules:
+                    if module.split(".")[0] in {"evaluator", "validator"}:
+                        offenders.append(f"{path.name}: {module}")
+
+        self.assertEqual(offenders, [], "политика импортирует оценщик")
+
+    def test_policy_limits_do_not_drift_from_the_contract(self):
+        """Копия лимитов в политиках должна совпадать с контрактом.
+
+        Константы продублированы намеренно, чтобы не импортировать оценщик.
+        Тест — не процесс политики, поэтому ему импортировать оценщик можно,
+        и он ловит расхождение значений.
+        """
+        from evaluator import contract
+        from policies import limits
+
+        self.assertEqual(limits.MAX_FINDINGS, contract.MAX_FINDINGS)
+        self.assertEqual(limits.MAX_EVIDENCE_IDS, contract.MAX_EVIDENCE_IDS)
+        self.assertEqual(
+            limits.MAX_EXPLANATION_CHARS, contract.MAX_EXPLANATION_CHARS
+        )
+        self.assertEqual(
+            set(limits.FALLBACK_ISSUE_TYPES), set(contract.ISSUE_TYPES)
+        )
 
 
 class LeakageTests(unittest.TestCase):

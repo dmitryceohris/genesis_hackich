@@ -24,6 +24,7 @@ from tests.transformations import (
     permute_records,
     rename_ids,
 )
+from validator import public_snapshot, reachable_ids
 
 
 def canonical(value) -> str:
@@ -38,6 +39,7 @@ def run_reconcile(episode: dict) -> tuple:
         env.truth,
         outcome["inspection_steps"],
         truncated=outcome["truncated"],
+        available_evidence_ids=frozenset(reachable_ids(public_snapshot(episode))),
     )
     return outcome, report
 

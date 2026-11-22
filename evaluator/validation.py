@@ -12,7 +12,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .contract import (
-    CURRENCY_PATTERN,
     ISSUE_TYPE_SET,
     MAX_EVIDENCE_IDS,
     MAX_EXPLANATION_CHARS,
@@ -125,7 +124,11 @@ def _validate_finding(raw: object, index: int) -> Validation:
         return _invalid(REASON_AMOUNT_NOT_INT, f"got {amount!r}", index)
 
     currency = raw.get("currency")
-    if not is_strict_str(currency) or not CURRENCY_PATTERN.match(currency):
+    if not is_strict_str(currency) or not currency:
+        # Формат не проверяется: по примеру M06 код валюты, отличающийся
+        # регистром или пробелом, обязан дать FP на сопоставлении, а не
+        # обрушить весь submit в −1. Структурно неверно только отсутствие
+        # строки или пустая строка.
         return _invalid(REASON_CURRENCY_INVALID, f"got {currency!r}", index)
 
     evidence_ids = raw.get("evidence_ids")

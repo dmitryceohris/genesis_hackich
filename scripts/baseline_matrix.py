@@ -32,6 +32,7 @@ from evaluator import EVALUATOR_CONTRACT_VERSION, build_oracle_submission, score
 from policies import MarkAllAgent, RandomExplorer, ReconciliationAgent
 from tests.fake_env import FakeEnv, run_policy
 from tests.fixtures import EPISODE_IDS, build_episode
+from validator import public_snapshot, reachable_ids
 
 EPISODE_SOURCE = "hand-built fixtures via tests.fake_env (not the real generator)"
 
@@ -63,6 +64,7 @@ def run_all() -> tuple[list[dict], list[dict]]:
     for episode_id in EPISODE_IDS:
         for policy in policies():
             episode = build_episode(episode_id)
+            available = frozenset(reachable_ids(public_snapshot(episode)))
             env = FakeEnv(episode)
 
             started = time.perf_counter()
@@ -72,6 +74,7 @@ def run_all() -> tuple[list[dict], list[dict]]:
                 env.truth,
                 outcome["inspection_steps"],
                 truncated=outcome["truncated"],
+                available_evidence_ids=available,
             )
             elapsed_ms = (time.perf_counter() - started) * 1000
 
@@ -98,7 +101,12 @@ def run_all() -> tuple[list[dict], list[dict]]:
         # Oracle считается на стороне оценщика и шагов не расходует.
         episode = build_episode(episode_id)
         oracle_report = score(
-            build_oracle_submission(episode["truth"]), episode["truth"], 0
+            build_oracle_submission(episode["truth"]),
+            episode["truth"],
+            0,
+            available_evidence_ids=frozenset(
+                reachable_ids(public_snapshot(episode))
+            ),
         )
         rows.append(
             {

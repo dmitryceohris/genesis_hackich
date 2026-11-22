@@ -51,6 +51,12 @@ TRUTH_ONE_ISSUE = {
 
 TRUTH_CLEAN = {"episode_id": EPISODE, "issues": []}
 
+#: Публичные ID, которые агент может получить инструментами в этой фикстуре.
+#: Нужны для проверки существования доказательств (примеры M03 и M04).
+AVAILABLE_IDS = frozenset(
+    {"INV-17", "R-12", "R-13", "D-INV-17", "POLICY-PERIOD"}
+)
+
 
 def finding(**overrides) -> dict:
     base = {
@@ -173,12 +179,45 @@ class MatcherAndRewardTests(unittest.TestCase):
         )
         self.assertEqual((report.tp, report.fp, report.fn), (0, 1, 1))
 
-    def test_14_extra_evidence_id_alongside_a_complete_set_still_matches(self):
+    def test_14a_extra_existing_evidence_id_still_matches(self):
+        """Пример M03: дополнительное существующее доказательство разрешено."""
         report = score(
             submission(
-                finding(
-                    evidence_ids=["D-INV-17", "R-12", "POLICY-PERIOD", "R-99"]
-                )
+                finding(evidence_ids=["D-INV-17", "R-12", "POLICY-PERIOD", "R-13"])
+            ),
+            TRUTH_ONE_ISSUE,
+            6,
+            available_evidence_ids=AVAILABLE_IDS,
+        )
+        self.assertEqual(report.tp, 1)
+
+    def test_14b_unavailable_evidence_id_breaks_the_match(self):
+        """Пример M04: выдуманный ID отравляет вывод целиком.
+
+        Полный допустимый набор в заявке присутствует, но определения проверок
+        требуют FP: «Если указан несуществующий или недоступный evidence_id,
+        вывод не сопоставляется и даёт FP».
+        """
+        report = score(
+            submission(
+                finding(evidence_ids=["D-INV-17", "R-12", "POLICY-PERIOD", "R-99"])
+            ),
+            TRUTH_ONE_ISSUE,
+            6,
+            available_evidence_ids=AVAILABLE_IDS,
+        )
+        self.assertEqual((report.tp, report.fp, report.fn), (0, 1, 1))
+
+    def test_14c_without_the_available_set_existence_is_not_checked(self):
+        """Граница применимости: ``None`` отключает проверку существования.
+
+        Так устроены модульные тесты формулы, где эпизода нет. На пути
+        реального эпизода множество передаётся всегда, иначе выдуманные
+        доказательства начнут приносить TP.
+        """
+        report = score(
+            submission(
+                finding(evidence_ids=["D-INV-17", "R-12", "POLICY-PERIOD", "R-99"])
             ),
             TRUTH_ONE_ISSUE,
             6,
@@ -267,7 +306,11 @@ class MatcherAndRewardTests(unittest.TestCase):
             "findings_not_a_list": {"episode_id": EPISODE, "findings": "none"},
             "unknown_type": submission(finding(type="made_up")),
             "empty_affected_ids": submission(finding(affected_ids=[])),
-            "bad_currency": submission(finding(currency="usd")),
+            # Структурно неверна только нестрока или пустая строка. Код
+            # валюты в другом регистре структурно валиден и даёт FP: см.
+            # test_currency_case_difference_is_a_false_positive.
+            "currency_not_a_string": submission(finding(currency=840)),
+            "currency_empty": submission(finding(currency="")),
             "payload_not_an_object": ["not", "an", "object"],
             "amount_as_string": submission(finding(claimed_amount_minor="25000")),
             "evidence_not_strings": submission(finding(evidence_ids=[1, 2])),
@@ -280,6 +323,23 @@ class MatcherAndRewardTests(unittest.TestCase):
                 self.assertIsNotNone(report.invalid_reason)
                 # Метрики не считаются: ни одного TP у невалидной заявки.
                 self.assertEqual(report.tp, 0)
+
+    def test_17c_currency_case_difference_is_a_false_positive(self):
+        """Пример M06: регистр или пробел в коде валюты — FP, а не −1.
+
+        Это разница между потерей одного вывода и обнулением всего эпизода,
+        поэтому проверяется отдельно от структурных случаев.
+        """
+        for variant in ("usd", "USD ", " USD"):
+            with self.subTest(currency=variant):
+                report = score(
+                    submission(finding(currency=variant)),
+                    TRUTH_ONE_ISSUE,
+                    6,
+                    available_evidence_ids=AVAILABLE_IDS,
+                )
+                self.assertTrue(report.valid, "структурно это валидная заявка")
+                self.assertEqual((report.tp, report.fp, report.fn), (0, 1, 1))
 
     def test_17b_empty_evidence_list_is_valid_but_confirms_nothing(self):
         report = score(submission(finding(evidence_ids=[])), TRUTH_ONE_ISSUE, 6)

@@ -82,6 +82,38 @@ class ScoreReport:
     def to_dict(self) -> dict:
         return asdict(self)
 
+    def to_judge_dict(self) -> dict:
+        """Ровно те семь полей, которые ждёт ``score_episode`` адаптера.
+
+        Определения проверок: валидный submit возвращает
+        ``{"tp", "fp", "fn", "precision", "recall", "f1", "return"}``;
+        невалидный — ``return=-1``, а **остальные поля равны null**, и эти
+        null-метрики не используются для ранжирования.
+
+        Поэтому внутренний отчёт и ответ жюри — разные вещи: внутри остаются
+        диагностика и счётчики для приватного журнала, наружу уходит только
+        контрактная семёрка. Ключ называется ``return``, а не ``reward``.
+        """
+        if not self.valid:
+            return {
+                "tp": None,
+                "fp": None,
+                "fn": None,
+                "precision": None,
+                "recall": None,
+                "f1": None,
+                "return": float(INVALID_SUBMISSION_REWARD),
+            }
+        return {
+            "tp": self.tp,
+            "fp": self.fp,
+            "fn": self.fn,
+            "precision": self.precision,
+            "recall": self.recall,
+            "f1": self.f1,
+            "return": self.reward,
+        }
+
 
 def score(
     payload: object,
@@ -90,12 +122,18 @@ def score(
     *,
     truncated: bool = False,
     tolerance_minor: int = AMOUNT_TOLERANCE_MINOR,
+    available_evidence_ids: frozenset[str] | None = None,
 ) -> ScoreReport:
     """Оценить заявку относительно эталона.
 
     ``payload`` — то, что агент передал в ``submit``. ``None`` означает, что
     заявки не было: эпизод усечён по шагам или времени, и оценивается пустая
     заявка. Этот итог отличается от структурно неверного ``submit``.
+
+    ``available_evidence_ids`` — публичные ID, которые агент действительно
+    может получить инструментами. Нужны, чтобы выдуманное доказательство не
+    приносило TP (пример M04). На пути реального эпизода передаются всегда;
+    ``None`` оставлен для модульных тестов формулы, где эпизода нет.
     """
     episode_id = truth["episode_id"]
     issues = normalize_truth(truth)
@@ -125,7 +163,7 @@ def score(
         )
 
     findings = validation.findings
-    result = match(findings, issues, tolerance_minor)
+    result = match(findings, issues, tolerance_minor, available_evidence_ids)
 
     counts = Counts(
         tp=result.tp,

@@ -190,7 +190,12 @@ def verify_snapshot_and_truth(snapshot: Snapshot, truth: dict) -> EpisodeVerdict
     # такой эталон диагностировать, а не падать вместе с ним: ровно это он и
     # проверяет.
     try:
-        oracle_reward = score(build_oracle_submission(truth), truth, 0).reward
+        oracle_reward = score(
+            build_oracle_submission(truth),
+            truth,
+            0,
+            available_evidence_ids=frozenset(reachable),
+        ).reward
     except ValueError as error:
         oracle_reward = 0.0
         notes.append(f"oracle не может собрать заявку: {error}")

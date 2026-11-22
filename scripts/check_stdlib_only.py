@@ -24,8 +24,13 @@ ROOT = Path(__file__).resolve().parent.parent
 #: Каталоги с нашим кодом.
 PACKAGES = ("evaluator", "policies", "validator", "tests", "scripts")
 
-#: Пакеты репозитория: это не внешние зависимости.
-OWN_MODULES = frozenset(PACKAGES)
+#: Модули в корне репозитория. Адаптер жюри — точка входа, его тоже проверяем.
+ROOT_MODULES = ("judge_adapter.py",)
+
+#: Пакеты репозитория: это не внешние зависимости. ``generator`` и
+#: ``environment`` перечислены заранее: адаптер импортирует их по желанию, и
+#: когда владельцы зон их добавят, гейт не должен считать их сторонними.
+OWN_MODULES = frozenset(PACKAGES) | {"judge_adapter", "generator", "environment"}
 
 #: Разрешённые необязательные инструменты и где именно.
 ALLOWED_OPTIONAL = {"pytest": "tests"}
@@ -51,23 +56,27 @@ def main() -> int:
     optional_uses: list[str] = []
     scanned = 0
 
-    for package in PACKAGES:
-        for path in sorted((ROOT / package).rglob("*.py")):
-            scanned += 1
-            relative = path.relative_to(ROOT).as_posix()
-            for name in sorted(top_level_imports(path)):
-                if name in stdlib or name in OWN_MODULES or name == "__future__":
-                    continue
-                if name in ALLOWED_OPTIONAL:
-                    expected = ALLOWED_OPTIONAL[name]
-                    if relative.startswith(f"{expected}/"):
-                        optional_uses.append(f"{relative}: {name}")
-                    else:
-                        offenders.append(
-                            f"{relative}: {name} разрешён только в {expected}/"
-                        )
-                    continue
-                offenders.append(f"{relative}: {name}")
+    paths = [
+        path for package in PACKAGES for path in sorted((ROOT / package).rglob("*.py"))
+    ]
+    paths += [ROOT / name for name in ROOT_MODULES if (ROOT / name).exists()]
+
+    for path in paths:
+        scanned += 1
+        relative = path.relative_to(ROOT).as_posix()
+        for name in sorted(top_level_imports(path)):
+            if name in stdlib or name in OWN_MODULES or name == "__future__":
+                continue
+            if name in ALLOWED_OPTIONAL:
+                expected = ALLOWED_OPTIONAL[name]
+                if relative.startswith(f"{expected}/"):
+                    optional_uses.append(f"{relative}: {name}")
+                else:
+                    offenders.append(
+                        f"{relative}: {name} разрешён только в {expected}/"
+                    )
+                continue
+            offenders.append(f"{relative}: {name}")
 
     print(f"просмотрено файлов: {scanned}")
     if optional_uses:

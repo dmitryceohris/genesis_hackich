@@ -57,15 +57,33 @@ def normalize_truth(truth: dict) -> tuple[dict, ...]:
 
 
 def evidence_is_sufficient(
-    evidence_ids: object, acceptable_evidence_sets: tuple[frozenset[str], ...]
+    evidence_ids: object,
+    acceptable_evidence_sets: tuple[frozenset[str], ...],
+    available_evidence_ids: frozenset[str] | None = None,
 ) -> bool:
-    """True, если хотя бы один допустимый набор целиком покрыт заявкой.
+    """True, если доказательства существуют и покрывают допустимый набор.
 
-    Проверка подмножества, а не равенства и не пересечения. Лишние ID не мешают
-    совпадению, но и не заменяют недостающие. Пустой набор доказательств в
+    Два условия, и оба обязательны.
+
+    Первое: все заявленные ID должны существовать и быть доступны через
+    объявленные инструменты. Определения проверок: «Если указан несуществующий
+    или недоступный evidence_id, вывод не сопоставляется и даёт FP». То есть
+    один выдуманный ID отравляет вывод целиком, даже когда полный допустимый
+    набор в заявке присутствует (пример M04). Дополнительные **существующие**
+    доказательства при этом разрешены и совпадению не мешают (пример M03).
+
+    Второе: хотя бы один допустимый набор целиком содержится в заявке. Это
+    проверка подмножества, а не равенства и не пересечения. Пустой набор в
     эталоне не бывает: такая ошибка считалась бы подтверждённой чем угодно.
+
+    ``available_evidence_ids=None`` отключает первую проверку и предназначен
+    только для модульных тестов формулы, где эпизода нет. На пути реального
+    эпизода множество доступных ID обязано передаваться: иначе выдуманные
+    доказательства начнут приносить TP.
     """
     claimed = canonical_ids(evidence_ids)
+    if available_evidence_ids is not None and not claimed <= available_evidence_ids:
+        return False
     for group in acceptable_evidence_sets:
         if group and group <= claimed:
             return True
@@ -76,10 +94,13 @@ def finding_matches_issue(
     finding: dict,
     issue: dict,
     tolerance_minor: int = AMOUNT_TOLERANCE_MINOR,
+    available_evidence_ids: frozenset[str] | None = None,
 ) -> bool:
     """Условие ребра «вывод ↔ эталонная ошибка».
 
-    Все пять условий обязательны. ``explanation`` на совпадение не влияет.
+    Все условия обязательны. ``explanation`` на совпадение не влияет.
+    Код валюты сравнивается посимвольно: без приведения регистра и обрезки
+    пробелов, как требуют определения проверок.
     """
     if finding["type"] != issue["type"]:
         return False
@@ -91,7 +112,9 @@ def finding_matches_issue(
     if delta > tolerance_minor:
         return False
     return evidence_is_sufficient(
-        finding["evidence_ids"], issue["acceptable_evidence_sets"]
+        finding["evidence_ids"],
+        issue["acceptable_evidence_sets"],
+        available_evidence_ids,
     )
 
 
@@ -99,12 +122,15 @@ def build_edges(
     findings: tuple[dict, ...],
     issues: tuple[dict, ...],
     tolerance_minor: int = AMOUNT_TOLERANCE_MINOR,
+    available_evidence_ids: frozenset[str] | None = None,
 ) -> list[Edge]:
     """Рёбра двудольного графа: (индекс вывода, issue_id)."""
     edges: list[Edge] = []
     for index, finding in enumerate(findings):
         for issue in issues:
-            if finding_matches_issue(finding, issue, tolerance_minor):
+            if finding_matches_issue(
+                finding, issue, tolerance_minor, available_evidence_ids
+            ):
                 edges.append((index, issue["issue_id"]))
     return sorted(set(edges))
 
@@ -140,15 +166,32 @@ def _matching_size(edges: list[Edge]) -> int:
     return size
 
 
+def _official_order(edge: Edge) -> tuple[str, int]:
+    """Порядок перебора рёбер из определений проверок.
+
+    Пары сортируются как ``(issue_id, индекс вывода)``: сначала эталонные
+    issue_id лексикографически по кодовым точкам Unicode, затем индекс вывода
+    во входном ``findings`` начиная с нуля. Порядок именно такой, а не
+    ``(индекс, issue_id)``: на размер паросочетания он не влияет, но определяет,
+    какая из равных по мощности пар будет выбрана, и должен совпадать с
+    правилом жюри побуквенно.
+    """
+    left, right = edge
+    return (right, left)
+
+
 def lexicographic_maximum_matching(edges: list[Edge]) -> list[Edge]:
     """Лексикографически первое максимальное паросочетание.
 
-    Рёбра перебираются в возрастающем порядке. Ребро принимается, если после
-    его фиксации максимальное паросочетание остатка всё ещё даёт нужный общий
-    размер. Это даёт в точности лексикографически минимальный отсортированный
-    список пар, а не просто какое-то детерминированное решение.
+    Рёбра перебираются в порядке ``(issue_id, индекс вывода)``. Ребро
+    принимается, если после его фиксации максимальное паросочетание остатка
+    всё ещё даёт нужный общий размер. Это даёт в точности лексикографически
+    минимальную последовательность пар, а не просто какое-то детерминированное
+    решение.
+
+    Результат возвращается в том же официальном порядке.
     """
-    ordered = sorted(set(edges))
+    ordered = sorted(set(edges), key=_official_order)
     target = _matching_size(ordered)
 
     chosen: list[Edge] = []
@@ -170,7 +213,7 @@ def lexicographic_maximum_matching(edges: list[Edge]) -> list[Edge]:
             if len(chosen) == target:
                 break
 
-    return chosen
+    return sorted(chosen, key=_official_order)
 
 
 @dataclass(frozen=True)
@@ -188,9 +231,10 @@ def match(
     findings: tuple[dict, ...],
     issues: tuple[dict, ...],
     tolerance_minor: int = AMOUNT_TOLERANCE_MINOR,
+    available_evidence_ids: frozenset[str] | None = None,
 ) -> MatchResult:
     """Сопоставить заявку с эталоном."""
-    edges = build_edges(findings, issues, tolerance_minor)
+    edges = build_edges(findings, issues, tolerance_minor, available_evidence_ids)
     pairs = lexicographic_maximum_matching(edges)
 
     matched_left = {left for left, _ in pairs}

@@ -10,9 +10,8 @@
 
 from __future__ import annotations
 
-from evaluator.contract import ISSUE_TYPES, MAX_FINDINGS
-
 from .base import Policy, base_currency_of, episode_id_of, submit
+from .limits import FALLBACK_ISSUE_TYPES, MAX_FINDINGS
 
 
 class MarkAllAgent(Policy):
@@ -24,15 +23,27 @@ class MarkAllAgent(Policy):
     def run(self, observation):
         episode_id = episode_id_of(observation)
         base_currency = base_currency_of(observation)
+        # Типы берутся из наблюдения: их сообщает среда. Локальный список —
+        # только резерв, если среда их не передала.
+        issue_types = observation.get("issue_types") or FALLBACK_ISSUE_TYPES
 
         ledger, observation = yield from self.fetch_table("ledger", observation)
         invoices, observation = yield from self.fetch_table("invoices", observation)
         payments, observation = yield from self.fetch_table("payments", observation)
 
-        findings = self._build(ledger, invoices, payments, base_currency)
+        findings = self._build(
+            ledger, invoices, payments, base_currency, tuple(issue_types)
+        )
         yield submit(episode_id, findings[: self.max_findings])
 
-    def _build(self, ledger, invoices, payments, base_currency) -> list[dict]:
+    def _build(
+        self,
+        ledger,
+        invoices,
+        payments,
+        base_currency,
+        issue_types: tuple[str, ...] = FALLBACK_ISSUE_TYPES,
+    ) -> list[dict]:
         findings: list[dict] = []
         row_ids = [row.get("row_id") for row in ledger if row.get("row_id")]
 
@@ -52,7 +63,7 @@ class MarkAllAgent(Policy):
             amount = invoice.get("total_minor")
             if type(amount) is not int:
                 amount = 0
-            for issue_type in ISSUE_TYPES:
+            for issue_type in issue_types:
                 findings.append(
                     {
                         "type": issue_type,

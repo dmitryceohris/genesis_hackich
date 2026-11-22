@@ -16,8 +16,6 @@ from __future__ import annotations
 
 from datetime import date
 
-from evaluator.contract import MAX_FINDINGS
-
 from .base import (
     Policy,
     base_currency_of,
@@ -25,6 +23,7 @@ from .base import (
     episode_id_of,
     submit,
 )
+from .limits import MAX_FINDINGS
 from .money import company_timezone, convert_minor, in_period, local_date, row_amount_minor
 
 DEFAULT_RULE_IDS = {
