@@ -22,10 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tests.fixtures import build_episodes
+from scripts.episodes import EPISODE_SOURCE, build_episodes
 from validator import verify_many
-
-EPISODE_SOURCE = "hand-built fixtures (not the real generator)"
 
 
 def load_episodes() -> dict[str, dict]:

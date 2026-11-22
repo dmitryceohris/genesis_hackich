@@ -30,11 +30,11 @@ if str(ROOT) not in sys.path:
 
 from evaluator import EVALUATOR_CONTRACT_VERSION, build_oracle_submission, score
 from policies import MarkAllAgent, RandomExplorer, ReconciliationAgent
-from tests.fake_env import FakeEnv, run_policy
-from tests.fixtures import EPISODE_IDS, build_episode
+from environment.engine import AuditEnv, run_policy
+from scripts.episodes import EPISODE_IDS, build_episode
 from validator import public_snapshot, reachable_ids
 
-EPISODE_SOURCE = "hand-built fixtures via tests.fake_env (not the real generator)"
+from scripts.episodes import EPISODE_SOURCE  # noqa: E402
 
 CSV_COLUMNS = [
     "episode_id",
@@ -65,7 +65,7 @@ def run_all() -> tuple[list[dict], list[dict]]:
         for policy in policies():
             episode = build_episode(episode_id)
             available = frozenset(reachable_ids(public_snapshot(episode)))
-            env = FakeEnv(episode)
+            env = AuditEnv(episode)
 
             started = time.perf_counter()
             outcome = run_policy(env, policy)

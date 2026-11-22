@@ -286,9 +286,15 @@ def _detect_payment_allocation(context: _Context) -> list[dict]:
                 else row_amount_minor(row)
                 for row in allocation_rows
             )
-            missing = stated - allocated
-            if missing <= 0:
+            # Расхождение считается по модулю. Журнал может распределить и
+            # меньше заявленного (остаток висит вне счёта), и больше (лишнее
+            # отнесено на обязательство, которого в документе нет). Обе
+            # стороны — одна и та же ошибка распределения, и обе встречаются
+            # в данных генератора.
+            difference = stated - allocated
+            if difference == 0:
                 continue
+            missing = abs(difference)
 
             # Недостающая доля переоценивается по верному курсу, а не по тому,
             # который применён в журнале: иначе ошибка FX исказит эту сумму.
@@ -329,8 +335,8 @@ def _detect_payment_allocation(context: _Context) -> list[dict]:
                     evidence,
                     (
                         f"По документу на {invoice_id} отнесено {stated} минимальных "
-                        f"единиц, в журнале распределено {allocated}. Недостающая "
-                        "доля осталась вне счёта."
+                        f"единиц, в журнале распределено {allocated}. Разница "
+                        f"{missing} не подтверждена документом платежа."
                     ),
                 )
             )

@@ -241,15 +241,24 @@ class ScoreEpisodeTests(unittest.TestCase):
                 self.assertIsNone(result[key])
 
     def test_fabricated_evidence_does_not_earn_a_true_positive(self):
-        """Пример M04 на сквозном пути, а не только в модульном тесте."""
+        """Пример M04 на сквозном пути, а не только в модульном тесте.
+
+        Портится ровно один вывод из эталонной заявки. Он обязан стать FP, а
+        его ошибка — FN; остальные выводы не задеты. Проверка записана через
+        число ошибок эпизода, а не через константу: эпизоды генератора
+        содержат больше одной ошибки, и захардкоженное число делало бы тест
+        проверкой размера фикстуры.
+        """
         payload = build_oracle_submission(self.truth)
-        if not payload["findings"]:
+        total = len(payload["findings"])
+        if not total:
             self.skipTest("нужен эпизод с заявленной ошибкой")
         payload["findings"][0]["evidence_ids"].append("ID-THAT-DOES-NOT-EXIST")
 
         result = judge_adapter.score_episode(self.episode_dir, payload, 0)
-        self.assertEqual(result["tp"], 0)
+        self.assertEqual(result["tp"], total - 1)
         self.assertEqual(result["fp"], 1)
+        self.assertEqual(result["fn"], 1)
 
     def test_generation_is_deterministic_for_a_seed(self):
         with tempfile.TemporaryDirectory() as other:
