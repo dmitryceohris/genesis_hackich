@@ -1,5 +1,7 @@
 # Зона оценщика: что готово и что нужно от остальных
 
+**Команда:** Лесхан Уаис, Тухватуллина Дилайла, Оспан Салих
+
 Контракт: [../docs/evaluator-contract.md](../docs/evaluator-contract.md).
 Ветка: `feature/evaluator-agents`.
 
