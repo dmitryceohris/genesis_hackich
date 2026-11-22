@@ -2,16 +2,29 @@
 import hashlib
 import random
 from datetime import date, datetime, time, timedelta
+from generator.settlement import (
+    from_base_minor,
+    quote_currencies,
+    rate_on,
+)
 from generator.timezones import resolve as _resolve_timezone
+
+#: Доля платежей, уходящих в банк в иностранной валюте. Нужна не для
+#: разнообразия: без валютного плеча ошибку пересчёта курса нельзя сделать
+#: денежной, а значит и доказуемой.
+FOREIGN_SETTLEMENT_SHARE = 0.25
 
 
 def generate_payments(
     seed: int,
     manifest: dict,
     invoices: list[dict],
+    fx: list[dict] | None = None,
 ) -> list[dict]:
 
     rng = random.Random(seed + 2002)
+    fx = fx or []
+    settlement_currencies = quote_currencies(fx)
 
     token = hashlib.sha256(
         str(seed).encode()
@@ -88,12 +101,14 @@ def generate_payments(
             payment_id = f"PAY-{token}-{payment_index:05d}"
             payment_index += 1
 
-            payments.append({
+            timestamp = make_timestamp(payment_date)
+
+            record = {
                 "payment_id": payment_id,
                 "entity_id": manifest["episode_id"],
                 "payment_type": "payment",
                 "related_payment_id": None,
-                "timestamp": make_timestamp(payment_date),
+                "timestamp": timestamp,
                 "currency": invoice["currency"],
                 "counterparty": invoice["counterparty"],
                 "amount_minor": amount,
@@ -102,7 +117,17 @@ def generate_payments(
                     "allocated_minor": amount,
                 }],
                 "bank_reference": make_reference(payment_index),
-            })
+            }
+
+            _attach_settlement(
+                record,
+                rng,
+                settlement_currencies,
+                fx,
+                payment_date,
+            )
+
+            payments.append(record)
 
     # Generate legitimate refunds after original payments.
     original_payments = list(payments)
@@ -151,3 +176,32 @@ def generate_payments(
         })
 
     return payments
+
+
+def _attach_settlement(
+    payment: dict,
+    rng: random.Random,
+    currencies: list[str],
+    fx: list[dict],
+    payment_date,
+) -> None:
+    """Отметить платёж как ушедший в банк в иностранной валюте.
+
+    Сумма в иностранной валюте считается обратным пересчётом базовой. Точного
+    обратного хода у округления нет, и подгонять суммы не нужно: разницу
+    журнал относит на счёт курсовой разницы.
+    """
+    if not currencies or rng.random() >= FOREIGN_SETTLEMENT_SHARE:
+        return
+
+    currency = currencies[rng.randrange(len(currencies))]
+    fx_row = rate_on(fx, currency, payment_date.isoformat())
+
+    if fx_row is None:
+        return
+
+    payment["settlement_currency"] = currency
+    payment["settlement_minor"] = from_base_minor(
+        payment["amount_minor"], fx_row["rate"]
+    )
+    payment["settlement_fx_id"] = fx_row["fx_id"]

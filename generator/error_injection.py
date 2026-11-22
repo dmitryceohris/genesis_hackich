@@ -5,6 +5,7 @@ import hashlib
 
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from generator.settlement import rate_on, to_base_minor
 from generator.timezones import resolve as _resolve_timezone
 
 
@@ -249,38 +250,84 @@ def inject_errors(
     # -------------------------------------------------
 
     if "fx_rate" in enabled_errors:
-        eligible_fx = [
-            record for record in result_fx
-            if record["quote_currency"] != record["base_currency"]
+        # Денежные строки с валютным плечом: только их пересчёт можно
+        # исказить так, чтобы искажённой оказалась сумма в книге. Искажение
+        # курса в самой таблице фиксингов ни одной суммы не меняет и
+        # доказывается лишь сравнением двух чисел в одной строке, поэтому
+        # ошибка вносится в проводку, а не в справочник.
+        eligible_rows = [
+            row for row in result_ledger
+            if row.get("source_currency")
+            and isinstance(row.get("source_minor"), int)
+            and row["account"] == "Bank"
         ]
 
-        if eligible_fx:
-            record = rng.choice(eligible_fx)
+        if eligible_rows:
+            row = rng.choice(eligible_rows)
 
-            fx_id = record["fx_id"]
-            original_rate = Decimal(record["rate"])
+            day = row["timestamp"][:10]
+            correct = rate_on(result_fx, row["source_currency"], day)
 
-            incorrect_rate = (
-                original_rate * Decimal("1.10")
-            ).quantize(Decimal("0.000001"))
-
-            record["rate"] = str(incorrect_rate)
-
-            register_error(
-                error_type="fx_rate",
-                affected_ids=[fx_id],
-                amount=None,
-                currency=record["quote_currency"],
-                evidence_ids=[fx_id],
-                explanation=(
-                    "The recorded exchange rate differs from "
-                    "the independent reference rate for the "
-                    "same date and currency."
+            # Берётся курс другой даты — типичная ошибка пересчёта «не на ту
+            # дату», а не выдуманное число. Если соседней даты нет, курс
+            # сдвигается на 3 процента.
+            wrong_row = next(
+                (
+                    item for item in result_fx
+                    if item["quote_currency"] == row["source_currency"]
+                    and item["date"] != day
+                    and Decimal(item["rate"]) != Decimal(correct["rate"])
                 ),
-                operation="increase_fx_rate_by_10_percent",
-                source_ids=[fx_id],
-                generated_ids=[],
+                None,
             )
+
+            if wrong_row is not None:
+                wrong_rate = Decimal(wrong_row["rate"])
+                operation = "post_cash_row_with_rate_of_another_date"
+            else:
+                wrong_rate = (
+                    Decimal(correct["rate"]) * Decimal("1.03")
+                ).quantize(Decimal("0.000001"))
+                operation = "post_cash_row_with_rate_shifted_by_3_percent"
+
+            correct_base = to_base_minor(
+                row["source_minor"], correct["rate"]
+            )
+            wrong_base = to_base_minor(row["source_minor"], wrong_rate)
+
+            if wrong_base > 0 and wrong_base != correct_base:
+                side = "debit_minor" if row["debit_minor"] else "credit_minor"
+                row[side] = wrong_base
+
+                # Двойная запись обязана сойтись: разницу забирает счёт
+                # курсовой разницы той же проводки. Без этого эпизод
+                # разошёлся бы по балансу и провалил инварианты — то есть
+                # стал бы противоречивыми данными, а не задачей.
+                _absorb_into_revaluation(
+                    result_ledger,
+                    row,
+                    wrong_base - correct_base,
+                )
+
+                register_error(
+                    error_type="fx_rate",
+                    affected_ids=[row["entry_id"], row["payment_id"]],
+                    amount=abs(wrong_base - correct_base),
+                    currency=manifest["base_currency"],
+                    evidence_ids=[
+                        row["entry_id"],
+                        correct["fx_id"],
+                        row["payment_id"],
+                    ],
+                    explanation=(
+                        "The cash posting converts the settled foreign "
+                        "amount at a rate other than the published fixing "
+                        "for the payment date."
+                    ),
+                    operation=operation,
+                    source_ids=[row["entry_id"], correct["fx_id"]],
+                    generated_ids=[],
+                )
 
     # -------------------------------------------------
     # 4. ACCOUNTING PERIOD ERROR
@@ -380,3 +427,51 @@ def inject_errors(
         "truth": truth,
         "provenance": provenance,
     }
+
+
+def _absorb_into_revaluation(ledger: list[dict], cash_row: dict, delta: int) -> None:
+    """Отнести ``delta`` на счёт курсовой разницы проводки денежной строки.
+
+    Строка курсовой разницы в проводке может отсутствовать: при точном
+    обратном пересчёте разницы нет и строка не создаётся. Тогда она
+    добавляется здесь, чтобы двойная запись сошлась.
+    """
+    if delta == 0:
+        return
+
+    transaction_id = cash_row["transaction_id"]
+    cash_is_debit = bool(cash_row["debit_minor"])
+
+    # Если денежная строка в дебете и выросла, равновесие требует роста
+    # кредита, и наоборот.
+    debit_delta = -delta if cash_is_debit else delta
+
+    for row in ledger:
+        if (
+            row["transaction_id"] == transaction_id
+            and row["account"] == "FX Revaluation"
+        ):
+            value = row["debit_minor"] - row["credit_minor"] + debit_delta
+            row["debit_minor"] = max(0, value)
+            row["credit_minor"] = max(0, -value)
+            return
+
+    position = max(
+        index for index, row in enumerate(ledger)
+        if row["transaction_id"] == transaction_id
+    )
+    ledger.insert(
+        position + 1,
+        {
+            "entry_id": f"{transaction_id}-FXREVAL",
+            "transaction_id": transaction_id,
+            "timestamp": cash_row["timestamp"],
+            "entity_id": cash_row["entity_id"],
+            "invoice_id": cash_row["invoice_id"],
+            "payment_id": cash_row["payment_id"],
+            "currency": cash_row["currency"],
+            "account": "FX Revaluation",
+            "debit_minor": max(0, debit_delta),
+            "credit_minor": max(0, -debit_delta),
+        },
+    )

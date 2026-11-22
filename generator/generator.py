@@ -34,10 +34,15 @@ def generate_episode(
         config.get("n_invoices", 50),
     )
 
+    # Фиксинги строятся до платежей: валютное плечо платежа пересчитывается
+    # по курсу на его дату, и без таблицы курсов его не построить.
+    fx = generate_fx(seed, manifest)
+
     payments = generate_payments(
         seed,
         manifest,
         invoices,
+        fx,
     )
 
     ledger = generate_ledger(
@@ -45,9 +50,8 @@ def generate_episode(
         manifest,
         invoices,
         payments,
+        fx,
     )
-
-    fx = generate_fx(seed, manifest)
 
     # Validate clean financial history before mutations
     validate_clean_data(

@@ -22,15 +22,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 #: Каталоги с нашим кодом.
-PACKAGES = ("evaluator", "policies", "validator", "tests", "scripts")
+PACKAGES = (
+    "evaluator",
+    "policies",
+    "validator",
+    "generator",
+    "integration",
+    "environment",
+    "tests",
+    "scripts",
+)
 
 #: Модули в корне репозитория. Адаптер жюри — точка входа, его тоже проверяем.
 ROOT_MODULES = ("judge_adapter.py",)
 
-#: Пакеты репозитория: это не внешние зависимости. ``generator`` и
-#: ``environment`` перечислены заранее: адаптер импортирует их по желанию, и
-#: когда владельцы зон их добавят, гейт не должен считать их сторонними.
-OWN_MODULES = frozenset(PACKAGES) | {"judge_adapter", "generator", "environment"}
+#: Пакеты репозитория: это не внешние зависимости.
+OWN_MODULES = frozenset(PACKAGES) | {"judge_adapter"}
 
 #: Разрешённые необязательные инструменты и где именно.
 ALLOWED_OPTIONAL = {"pytest": "tests"}

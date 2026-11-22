@@ -1,6 +1,12 @@
 
 from datetime import date, datetime, time
+from generator.settlement import rate_on, to_base_minor
 from generator.timezones import resolve as _resolve_timezone
+
+#: Счёт курсовой разницы. Пересчёт иностранной суммы по курсу почти никогда не
+#: совпадает с суммой обязательства до минимальной единицы, и в учёте разницу
+#: относят на отдельный счёт, а не подгоняют проводку.
+FX_REVALUATION_ACCOUNT = "FX Revaluation"
 
 
 def generate_ledger(
@@ -8,10 +14,12 @@ def generate_ledger(
     manifest: dict,
     invoices: list[dict],
     payments: list[dict],
+    fx: list[dict] | None = None,
 ) -> list[dict]:
 
     timezone = _resolve_timezone(manifest["timezone"])
     episode_id = manifest["episode_id"]
+    fx = fx or []
 
     invoice_map = {
         invoice["invoice_id"]: invoice
@@ -40,6 +48,7 @@ def generate_ledger(
         account,
         debit,
         credit,
+        extra=None,
     ):
         if debit < 0 or credit < 0:
             raise ValueError("Negative ledger amount")
@@ -50,7 +59,7 @@ def generate_ledger(
         if debit == 0 and credit == 0:
             return
 
-        rows.append({
+        entry = {
             "entry_id": f"{transaction_id}-{len(rows):06d}",
             "transaction_id": transaction_id,
             "timestamp": timestamp,
@@ -61,7 +70,12 @@ def generate_ledger(
             "account": account,
             "debit_minor": debit,
             "credit_minor": credit,
-        })
+        }
+
+        if extra:
+            entry.update(extra)
+
+        rows.append(entry)
 
     # Invoice postings
     for invoice in invoices:
@@ -196,16 +210,41 @@ def generate_ledger(
             currency = payment["currency"]
 
             if payment_type == "payment":
+                # Валютное плечо: со счёта ушла иностранная сумма, в книге
+                # отражён её пересчёт по курсу на дату платежа. Денежная
+                # строка несёт обе суммы, разницу забирает счёт курсовой
+                # разницы.
+                settlement = _settlement_leg(payment, fx)
+
+                if settlement is None:
+                    cash_amount = amount
+                    cash_extra = None
+                else:
+                    cash_amount = settlement["base_minor"]
+                    cash_extra = {
+                        "source_minor": settlement["source_minor"],
+                        "source_currency": settlement["currency"],
+                        "fx_id": settlement["fx_id"],
+                    }
+
+                difference = cash_amount - amount
+
                 if invoice["direction"] == "sales":
                     add_entry(
                         transaction_id, timestamp,
                         currency, invoice_id, payment_id,
-                        "Bank", amount, 0
+                        "Bank", cash_amount, 0, cash_extra
                     )
                     add_entry(
                         transaction_id, timestamp,
                         currency, invoice_id, payment_id,
                         "Accounts Receivable", 0, amount
+                    )
+                    add_entry(
+                        transaction_id, timestamp,
+                        currency, invoice_id, payment_id,
+                        FX_REVALUATION_ACCOUNT,
+                        max(0, -difference), max(0, difference)
                     )
                 else:
                     add_entry(
@@ -216,7 +255,13 @@ def generate_ledger(
                     add_entry(
                         transaction_id, timestamp,
                         currency, invoice_id, payment_id,
-                        "Bank", 0, amount
+                        "Bank", 0, cash_amount, cash_extra
+                    )
+                    add_entry(
+                        transaction_id, timestamp,
+                        currency, invoice_id, payment_id,
+                        FX_REVALUATION_ACCOUNT,
+                        max(0, difference), max(0, -difference)
                     )
 
             else:
@@ -262,3 +307,25 @@ def generate_ledger(
             )
 
     return rows
+
+
+def _settlement_leg(payment: dict, fx: list[dict]) -> dict | None:
+    """Валютное плечо платежа, если оно есть и курс на дату найден."""
+    currency = payment.get("settlement_currency")
+    source_minor = payment.get("settlement_minor")
+
+    if not currency or not isinstance(source_minor, int):
+        return None
+
+    day = payment["timestamp"][:10]
+    fx_row = rate_on(fx, currency, day)
+
+    if fx_row is None:
+        return None
+
+    return {
+        "currency": currency,
+        "source_minor": source_minor,
+        "fx_id": fx_row["fx_id"],
+        "base_minor": to_base_minor(source_minor, fx_row["rate"]),
+    }

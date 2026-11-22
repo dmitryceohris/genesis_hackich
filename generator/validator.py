@@ -310,7 +310,14 @@ def validate_clean_data(
             totals["debit"] += row["debit_minor"]
             totals["credit"] += row["credit_minor"]
 
-        if row["payment_id"] is not None:
+        # Для платежа сверяется плечо обязательства, а не все строки.
+        # С валютным плечом денежная строка несёт пересчёт иностранной суммы,
+        # и её значение отличается от суммы обязательства на курсовую разницу;
+        # равенство дебета и кредита по проводке проверяется отдельно.
+        if row["payment_id"] is not None and row["account"] in {
+            "Accounts Payable",
+            "Accounts Receivable",
+        }:
             totals = payment_postings.setdefault(
                 row["payment_id"],
                 {"debit": 0, "credit": 0},
@@ -331,8 +338,7 @@ def validate_clean_data(
         totals = payment_postings.get(payment_id)
         _require(totals is not None, f"Missing payment posting: {payment_id}")
         _require(
-            totals["debit"] == payment["amount_minor"]
-            and totals["credit"] == payment["amount_minor"],
+            totals["debit"] + totals["credit"] == payment["amount_minor"],
             f"Payment posting amount mismatch: {payment_id}",
         )
 

@@ -225,7 +225,7 @@ class EpisodeSourceTests(unittest.TestCase):
         episode = build_episode(SEED)
         kinds = {issue["type"] for issue in episode["truth"]["issues"]}
         self.assertTrue(kinds)
-        self.assertLessEqual(len(kinds), len(DEFAULT_ERROR_TYPES))
+        self.assertEqual(len(kinds), len(DEFAULT_ERROR_TYPES))
 
     def test_every_declared_issue_has_a_provenance_record(self):
         episode = build_episode(SEED)
@@ -233,14 +233,67 @@ class EpisodeSourceTests(unittest.TestCase):
         recorded = {item["error_id"] for item in episode["provenance"]["records"]}
         self.assertEqual(declared, recorded)
 
-    def test_undeclarable_errors_are_reported_not_hidden(self):
-        """Ошибка, которую реконструкция не выводит, видна в provenance."""
-        episode = build_episode(SEED, {"error_types": list(DEFAULT_ERROR_TYPES) + ["fx_rate"]})
-        undeclarable = episode["provenance"]["undeclarable"]
-        self.assertTrue(undeclarable, "fx_rate на одновалютной книге недоказуем")
-        self.assertEqual(undeclarable[0]["official_type"], "fx_conversion")
+    def test_all_four_error_types_are_declared_and_quantified(self):
+        """Четыре типа задания, и у каждого сумма в минимальных единицах.
+
+        ``fx_conversion`` держится на валютном плече платежа: без него
+        искажение курса не меняет ни одной суммы, ошибка становится
+        недоказуемой и в эталон попасть не может.
+        """
+        episode = build_episode(SEED)
         declared = {issue["type"] for issue in episode["truth"]["issues"]}
-        self.assertNotIn("fx_conversion", declared)
+        self.assertEqual(
+            declared,
+            {"duplicate_invoice", "payment_allocation", "fx_conversion", "period_cutoff"},
+        )
+        for issue in episode["truth"]["issues"]:
+            with self.subTest(issue=issue["issue_id"]):
+                self.assertIs(type(issue["expected_amount_minor"]), int)
+                self.assertGreater(issue["expected_amount_minor"], 0)
+                self.assertTrue(issue["acceptable_evidence_sets"])
+
+    def test_undeclarable_errors_are_reported_not_hidden(self):
+        """Ошибку, которую реконструкция не выводит, эталон не объявляет.
+
+        Правило проверяется на собранном вручную случае, а не на настройке
+        генератора: все четыре типа сейчас доказуемы, и подогнать генератор
+        под этот тест значило бы испортить данные ради теста.
+        """
+        from integration.episode_adapter import adapt_episode
+
+        from generator.generator import generate_episode as build_raw
+
+        raw = build_raw(SEED, {"error_types": list(DEFAULT_ERROR_TYPES)})
+        raw["private"]["truth"].append(
+            {
+                "error_id": "ERR-9999",
+                "type": "fx_rate",
+                "affected_ids": [raw["public"]["fx"][0]["fx_id"]],
+                "claimed_amount_minor": None,
+                "currency": raw["public"]["fx"][0]["quote_currency"],
+                "evidence_ids": [raw["public"]["fx"][0]["fx_id"]],
+                "explanation": "ошибка, которой нет в публичных записях",
+            }
+        )
+        raw["private"]["provenance"].append(
+            {
+                "error_id": "ERR-9999",
+                "type": "fx_rate",
+                "operation": "none",
+                "source_ids": [],
+                "generated_ids": [],
+            }
+        )
+
+        episode = adapt_episode(raw)
+        undeclarable = episode["provenance"]["undeclarable"]
+        self.assertEqual([item["error_id"] for item in undeclarable], ["ERR-9999"])
+        self.assertNotIn(
+            "ERR-9999", {issue["issue_id"] for issue in episode["truth"]["issues"]}
+        )
+        self.assertNotIn(
+            "ERR-9999", {item["error_id"] for item in episode["provenance"]["records"]}
+        )
 
     def test_episode_dir_branch_loads_exactly_that_episode(self):
         import tempfile

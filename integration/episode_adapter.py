@@ -96,12 +96,22 @@ def adapt_episode(episode):
             role = "expense"
         elif account == "Bank":
             role = "cash"
+        elif account == "FX Revaluation":
+            # Не распределение: иначе тождество распределения считало бы
+            # курсовую разницу долей обязательства.
+            role = "other"
         elif row["payment_id"] is not None:
             role = "allocation"
         else:
             role = "other"
 
         amount = row["debit_minor"] or row["credit_minor"]
+
+        # Валютное плечо, если генератор его построил: со счёта ушла сумма в
+        # иностранной валюте, в книге отражён её пересчёт. Без этих двух полей
+        # ошибку пересчёта нельзя вывести из публичных записей.
+        source_minor = row.get("source_minor", amount)
+        source_currency = row.get("source_currency", row["currency"])
 
         ledger.append({
             "row_id": row["entry_id"],
@@ -120,8 +130,8 @@ def adapt_episode(episode):
                 if row["payment_id"]
                 else invoice_doc_ids.get(row["invoice_id"])
             ),
-            "source_minor": amount,
-            "source_currency": row["currency"],
+            "source_minor": source_minor,
+            "source_currency": source_currency,
         })
 
     fx = [
