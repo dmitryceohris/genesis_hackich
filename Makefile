@@ -13,7 +13,7 @@ PYTHON ?= python3
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify test reference baselines episodes clean image agent-image agent-run docker-verify
+.PHONY: help verify test reference baselines episodes clean image agent-image agent-run docker-verify images
 
 help:
 	@echo "verify     - все обязательные проверки, ненулевой код при провале"
@@ -27,6 +27,7 @@ help:
 	@echo "docker-verify - прогнать обязательную проверку в контейнере без сети"
 	@echo "agent-image   - собрать образ изоляции агента"
 	@echo "agent-run     - прогнать политику в изоляции: без сети, read-only"
+	@echo "images        - проверить оба образа одной командой, с диагностикой"
 	@echo ""
 	@echo "PYTHON=$(PYTHON) (переопределяется: make verify PYTHON=python)"
 
@@ -44,6 +45,9 @@ baselines:
 
 episodes:
 	$(PYTHON) scripts/build_episode_sets.py
+
+images:
+	$(PYTHON) scripts/check_images.py
 
 image:
 	docker build -t genesis-audit-verify .
