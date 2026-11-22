@@ -130,6 +130,12 @@ def main() -> int:
 
     steps.append(
         run_command(
+            "отсутствие сторонних зависимостей",
+            [sys.executable, "scripts/check_stdlib_only.py"],
+        )
+    )
+    steps.append(
+        run_command(
             "тесты контракта, награды, политик и парных проверок",
             [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "."],
         )
