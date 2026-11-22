@@ -120,9 +120,12 @@ def generate_episode(
             "payment_allocation_required": True,
         },
         "payment_policy": {
-            "allocation_total_must_equal_payment": True,
-            "partial_payments_allowed": True,
-        },
+    "allocation_total_must_equal_payment": True,
+    "partial_payments_allowed": True,
+    "refunds_allowed": True,
+    "refunds_must_reference_original_payment": True,
+    "cumulative_refunds_cannot_exceed_original": True,
+},
         "period_policy": {
             "postings_must_be_within_reporting_period": True,
         },

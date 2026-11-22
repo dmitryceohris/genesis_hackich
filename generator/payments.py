@@ -23,22 +23,33 @@ def generate_payments(
     payments = []
     payment_index = 0
 
+    def make_timestamp(payment_date: date) -> str:
+        value = datetime.combine(
+            payment_date,
+            time(
+                hour=rng.randint(8, 18),
+                minute=rng.choice([0, 15, 30, 45]),
+            ),
+            tzinfo=timezone,
+        )
+        return value.isoformat()
+
+    def make_reference(index: int) -> str:
+        return f"BANK-{token}-{index:05d}"
+
     for invoice in invoices:
         invoice_date = date.fromisoformat(invoice["invoice_date"])
         total_minor = invoice["total_minor"]
 
-        # 15% счетов остаются неоплаченными
         if rng.random() < 0.15:
             continue
 
-        # Выбираем количество платежей
         payment_count = rng.choices(
             [1, 2, 3],
             weights=[60, 30, 10],
             k=1,
         )[0]
 
-        # Определяем долю оплаченной суммы
         if rng.random() < 0.75:
             paid_total = total_minor
         else:
@@ -47,7 +58,6 @@ def generate_payments(
                 total_minor - 1,
             )
 
-        # Разбиваем сумму на платежи без потери копеек
         remaining = paid_total
         allocations = []
 
@@ -57,10 +67,9 @@ def generate_payments(
             if parts_left == 1:
                 amount = remaining
             else:
-                max_amount = remaining - (parts_left - 1)
                 amount = rng.randint(
                     1,
-                    max_amount,
+                    remaining - (parts_left - 1),
                 )
 
             allocations.append(amount)
@@ -73,19 +82,7 @@ def generate_payments(
                 continue
 
             payment_date = invoice_date + timedelta(
-                days=rng.randint(
-                    0,
-                    min(available_days, 90),
-                )
-            )
-
-            payment_time = datetime.combine(
-                payment_date,
-                time(
-                    hour=rng.randint(8, 18),
-                    minute=rng.choice([0, 15, 30, 45]),
-                ),
-                tzinfo=timezone,
+                days=rng.randint(0, min(available_days, 90))
             )
 
             payment_id = f"PAY-{token}-{payment_index:05d}"
@@ -94,17 +91,63 @@ def generate_payments(
             payments.append({
                 "payment_id": payment_id,
                 "entity_id": manifest["episode_id"],
-                "timestamp": payment_time.isoformat(),
+                "payment_type": "payment",
+                "related_payment_id": None,
+                "timestamp": make_timestamp(payment_date),
                 "currency": invoice["currency"],
                 "counterparty": invoice["counterparty"],
                 "amount_minor": amount,
-                "allocations": [
-                    {
-                        "invoice_id": invoice["invoice_id"],
-                        "allocated_minor": amount,
-                    }
-                ],
-                "bank_reference": f"BANK-{token}-{payment_index:05d}",
+                "allocations": [{
+                    "invoice_id": invoice["invoice_id"],
+                    "allocated_minor": amount,
+                }],
+                "bank_reference": make_reference(payment_index),
             })
+
+    # Generate legitimate refunds after original payments.
+    original_payments = list(payments)
+
+    for original in original_payments:
+        if rng.random() >= 0.05:
+            continue
+
+        original_date = datetime.fromisoformat(
+            original["timestamp"]
+        ).date()
+
+        available_days = (period_end - original_date).days
+
+        if available_days < 1:
+            continue
+
+        refund_date = original_date + timedelta(
+            days=rng.randint(1, available_days)
+        )
+
+        refund_amount = rng.randint(
+            1,
+            original["amount_minor"],
+        )
+
+        original_allocation = original["allocations"][0]
+
+        refund_id = f"PAY-{token}-{payment_index:05d}"
+        payment_index += 1
+
+        payments.append({
+            "payment_id": refund_id,
+            "entity_id": manifest["episode_id"],
+            "payment_type": "refund",
+            "related_payment_id": original["payment_id"],
+            "timestamp": make_timestamp(refund_date),
+            "currency": original["currency"],
+            "counterparty": original["counterparty"],
+            "amount_minor": refund_amount,
+            "allocations": [{
+                "invoice_id": original_allocation["invoice_id"],
+                "allocated_minor": refund_amount,
+            }],
+            "bank_reference": make_reference(payment_index),
+        })
 
     return payments

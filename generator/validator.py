@@ -104,7 +104,16 @@ def validate_clean_data(
         item["payment_id"]: item
         for item in payments
     }
+    bank_references = [
+        item["bank_reference"]
+        for item in payments
+    ]
 
+    _require(
+        all(isinstance(ref, str) and ref for ref in bank_references),
+        "Invalid bank reference",
+    )
+    _unique(bank_references, "bank references")
     # Validate invoices
     for invoice in invoices:
         invoice_date = _parse_date(
@@ -139,11 +148,16 @@ def validate_clean_data(
         )
 
     # Validate payments and allocations
+    
+    # Validate payments, refunds and allocations
+    refund_allocations = {}
+
     for payment in payments:
         timestamp = _parse_timestamp(
             payment["timestamp"],
             "payment timestamp",
         )
+
         _require(
             start <= timestamp.date() <= end,
             f"Payment outside reporting period: {payment['payment_id']}",
@@ -151,26 +165,106 @@ def validate_clean_data(
 
         _require(
             isinstance(payment["amount_minor"], int)
+            and not isinstance(payment["amount_minor"], bool)
             and payment["amount_minor"] > 0,
             f"Invalid payment amount: {payment['payment_id']}",
         )
 
+        payment_type = payment.get("payment_type", "payment")
+
+        _require(
+            payment_type in {"payment", "refund"},
+            f"Invalid payment type: {payment['payment_id']}",
+        )
+
+        original = None
+
+        if payment_type == "payment":
+            _require(
+                payment.get("related_payment_id") is None,
+                f"Normal payment cannot reference another payment: {payment['payment_id']}",
+            )
+
+        else:
+            original_id = payment.get("related_payment_id")
+            original = payment_map.get(original_id)
+
+            _require(
+                original is not None,
+                f"Refund references unknown payment: {payment['payment_id']}",
+            )
+            _require(
+                original.get("payment_type", "payment") == "payment",
+                f"Refund cannot reference another refund: {payment['payment_id']}",
+            )
+            _require(
+                original["currency"] == payment["currency"],
+                f"Refund currency mismatch: {payment['payment_id']}",
+            )
+            _require(
+                timestamp > _parse_timestamp(
+                    original["timestamp"],
+                    "original payment timestamp",
+                ),
+                f"Refund must occur after original payment: {payment['payment_id']}",
+            )
+            _require(
+                payment["amount_minor"] <= original["amount_minor"],
+                f"Refund exceeds original payment: {payment['payment_id']}",
+            )
+
         allocation_total = 0
+
+        original_allocations = {}
+
+        if original is not None:
+            for item in original["allocations"]:
+                invoice_id = item["invoice_id"]
+                original_allocations[invoice_id] = (
+                    original_allocations.get(invoice_id, 0)
+                    + item["allocated_minor"]
+                )
 
         for allocation in payment["allocations"]:
             invoice_id = allocation["invoice_id"]
-            _require(invoice_id in invoice_map, f"Unknown invoice: {invoice_id}")
+            amount = allocation["allocated_minor"]
+
+            _require(
+                invoice_id in invoice_map,
+                f"Unknown invoice: {invoice_id}",
+            )
 
             invoice = invoice_map[invoice_id]
+
             _require(
                 payment["currency"] == invoice["currency"],
                 f"Payment currency mismatch: {payment['payment_id']}",
             )
             _require(
-                allocation["allocated_minor"] > 0,
+                isinstance(amount, int)
+                and not isinstance(amount, bool)
+                and amount > 0,
                 f"Invalid allocation: {payment['payment_id']}",
             )
-            allocation_total += allocation["allocated_minor"]
+
+            if payment_type == "refund":
+                _require(
+                    invoice_id in original_allocations,
+                    f"Refund invoice not present in original payment: {payment['payment_id']}",
+                )
+
+                key = (payment["related_payment_id"], invoice_id)
+
+                refund_allocations[key] = (
+                    refund_allocations.get(key, 0) + amount
+                )
+
+                _require(
+                    refund_allocations[key] <= original_allocations[invoice_id],
+                    f"Cumulative refunds exceed original allocation: {payment['payment_id']}",
+                )
+
+            allocation_total += amount
 
         _require(
             allocation_total == payment["amount_minor"],
